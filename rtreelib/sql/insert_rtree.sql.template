@@ -1,0 +1,1 @@
+INSERT INTO ${schema}.rtree (obj_id, hex_id) VALUES (%(obj_id)s, %(hex_id)s) RETURNING id;

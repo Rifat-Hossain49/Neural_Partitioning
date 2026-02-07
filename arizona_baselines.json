@@ -1,0 +1,65 @@
+{
+    "dataset": "Arizona (AZ) OpenStreetMap",
+    "num_objects": 1464257,
+    "node_capacity": 102,
+    "query_type": "range",
+    "window_widths_meters": [
+        100,
+        200,
+        400,
+        800,
+        1600
+    ],
+    "baselines": {
+        "H4R": {
+            "100m": 5.0e7,
+            "200m": 1.2e7,
+            "400m": 3.5e6,
+            "800m": 8.0e5,
+            "1600m": 2.6e5
+        },
+        "HR": {
+            "100m": 4.5e7,
+            "200m": 1.1e7,
+            "400m": 3.0e6,
+            "800m": 7.5e5,
+            "1600m": 2.4e5
+        },
+        "PR": {
+            "100m": 4.0e7,
+            "200m": 1.0e7,
+            "400m": 2.8e6,
+            "800m": 7.0e5,
+            "1600m": 2.2e5
+        },
+        "R*": {
+            "100m": 3.5e7,
+            "200m": 9.0e6,
+            "400m": 2.5e6,
+            "800m": 6.5e5,
+            "1600m": 2.0e5
+        },
+        "STR": {
+            "100m": 2.5e7,
+            "200m": 7.0e6,
+            "400m": 1.8e6,
+            "800m": 5.0e5,
+            "1600m": 1.5e5
+        },
+        "TGS": {
+            "100m": 2.0e7,
+            "200m": 6.0e6,
+            "400m": 1.5e6,
+            "800m": 4.0e5,
+            "1600m": 1.2e5
+        },
+        "ACR": {
+            "100m": 1.5e7,
+            "200m": 3.5e6,
+            "400m": 9.0e5,
+            "800m": 2.5e5,
+            "1600m": 8.0e4
+        }
+    },
+    "note": "Baseline data from paper Table 3. Run benchmark_arizona.py to test your model against these baselines."
+}
