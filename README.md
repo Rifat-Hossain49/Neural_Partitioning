@@ -89,6 +89,14 @@ python extract_arizona.py --sample 1464257 --output arizona_large.csv
 ## Dataset Formats
 The system supports N-dimensional datasets via CSV files with `min_0, ..., max_{d-1}` columns.
 
+### Datasets used for training
+The following datasets were used during the training process:
+1. **Arizona OpenStreetMap Data**: [https://download.geofabrik.de/north-america/us.html](https://download.geofabrik.de/north-america/us.html)
+2. **Chicago Crimes 2001 to Present**: [https://www.kaggle.com/datasets/utkarshx27/crimes-2001-to-present](https://www.kaggle.com/datasets/utkarshx27/crimes-2001-to-present)
+3. **Twitter Geospatial Data**: [https://archive.ics.uci.edu/dataset/1050/twitter+geospatial+data](https://archive.ics.uci.edu/dataset/1050/twitter+geospatial+data)
+
+A script (`download_datasets.py`) is provided to automate the downloading of these datasets.
+
 ## Verification
 Run a quick check on a subset:
 ```bash
