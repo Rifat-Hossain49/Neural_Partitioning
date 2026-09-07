@@ -25,6 +25,7 @@ run_loss_weight_ablation.py  Six loss mixtures, three paired seeds
 run_final_train.py           Three final members with 0.75/0.25 weights
 run_locked_eval.py           Nine locked dataset-capacity cells
 run_fullscale.py             Capacity-sweep baseline materialization
+run_platon_budget_b128.py    Frozen WAHARP vs. PLATON rollouts 1/5/10/25
 ```
 
 Run them in this order:
@@ -40,6 +41,13 @@ Run them in this order:
 
 The scripts reject missing, ambiguous, or protocol-incompatible inputs. This
 is deliberate: a partial run must not be mistaken for the locked experiment.
+
+The supplemental PLATON-budget experiment is independent of model selection.
+`run_platon_budget_b128.py` uses the frozen selected checkpoint at capacity
+128, keeps PLATON at 100 simulation steps, and evaluates rollouts 1, 5, 10,
+and 25 on one shared fresh 6,000-query workload per dataset. It checkpoints
+each newly generated PLATON action and reuses the recorded rollout-25 cut list
+only after protocol, normalized-data, and construction-query hash checks pass.
 
 ## 3. Protocol details
 
