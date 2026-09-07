@@ -1,0 +1,11 @@
+{
+  "classification_weight": 0.25,
+  "elapsed_seconds": 383.773376613,
+  "final_queries_read": false,
+  "list_weight": 0.75,
+  "protocol_id": "waharp_loss075_final_train_v1_20260903",
+  "selected_checkpoint": "frozen_model/selected.pt",
+  "selected_checkpoint_sha256": "c158a7e365dc5fbad01de6126e8665a99fc942f13e362d359cb49be301f6b4f7",
+  "selected_member": 2,
+  "status": "COMPLETE"
+}

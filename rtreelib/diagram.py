@@ -125,7 +125,7 @@ def _rtree_leaf_entry_to_pydot(entry: RTreeEntry, img=None):
     rect = entry.rect
     rect_str = f'({rect.min_x}, {rect.min_y}, {rect.max_x}, {rect.max_y})'
     img_row = f'<tr><td><img src="{img}"/></td></tr>' if img else ''
-    data_str = f'<tr><td><font point-size="8">data={entry.data}</font></td></tr>' if entry.is_leaf and entry.data is not None else ''
+    data_str = f'<tr><td><font point-size="8">data={entry.data}</font></td></tr>' if entry.is_leaf else None
     return pydot.Node(
         id(entry),
         label=f'''<<table border="1" cellborder="0" cellspacing="0">
@@ -166,28 +166,17 @@ def _plot_rtree_leaves(ax, tree, highlight_entry=None):
         text_facecolor = (0.78, 0.24, 0.52, 0.25) if highlight else (0.24, 0.52, 0.78, 0.25)
         patch = patches.Rectangle(xy, w, h, linewidth=1, edgecolor=edgecolor, facecolor=facecolor)
         ax.add_patch(patch)
-        # Ensure entry.data is a string for annotation
-        data_text = str(entry.data) if entry.data is not None else str(id(entry))
-        try:
-            plt.annotate(
-                text=data_text,  # Use 'text' parameter explicitly
-                color=text_color,
-                fontsize=6,
-                fontweight='bold',
-                xy=xy,
-                xytext=(5, 4),
-                textcoords='offset pixels',
-                bbox=dict(fc=text_facecolor, ec='none', pad=3),
-                va='bottom',
-                ha='left')
-        except Exception as e:
-            # Fallback: try with minimal parameters
-            try:
-                plt.annotate(text=data_text, xy=xy)
-            except Exception as e2:
-                print(f"Warning: Could not annotate entry {id(entry)}: {e2}")
-                # Skip annotation if it fails
-                pass
+        plt.annotate(
+            s=entry.data,
+            color=text_color,
+            fontsize=6,
+            fontweight='bold',
+            xy=xy,
+            xytext=(5, 4),
+            textcoords='offset pixels',
+            bbox=dict(fc=text_facecolor, ec='none', pad=3),
+            va='bottom',
+            ha='left')
 
 
 def _plot_rtree_nodes(ax, tree, highlight_node=None):

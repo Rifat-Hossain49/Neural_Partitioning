@@ -1,0 +1,21 @@
+{
+  "baseline_rebuilds": 0,
+  "capacities": [
+    128,
+    256,
+    512
+  ],
+  "cells": 9,
+  "checkpoint_sha256": "c158a7e365dc5fbad01de6126e8665a99fc942f13e362d359cb49be301f6b4f7",
+  "correctness_mismatches": 0,
+  "datasets": [
+    "twitter",
+    "crimes",
+    "arizona"
+  ],
+  "protocol_id": "waharp_loss075_locked_eval_v1_20260903",
+  "queries_per_cell": 6000,
+  "selected_member": 2,
+  "status": "COMPLETE",
+  "training_protocol_id": "waharp_loss075_final_train_v1_20260903"
+}

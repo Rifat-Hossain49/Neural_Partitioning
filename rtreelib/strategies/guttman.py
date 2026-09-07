@@ -7,9 +7,8 @@ This implementation is used as the default for this library.
 
 import math
 import itertools
-import numpy as np
 from typing import List, TypeVar
-from ..rtree import RTreeBase, RTreeEntry, RTreeNode, DEFAULT_MAX_ENTRIES, EPSILON
+from ..rtree import RTreeBase, RTreeEntry, RTreeNode, DEFAULT_MAX_ENTRIES
 from rtreelib.models import Rect
 from .base import insert, least_area_enlargement, adjust_tree_strategy
 
@@ -69,23 +68,14 @@ def quadratic_split(tree: RTreeBase[T], node: RTreeNode[T]) -> RTreeNode[T]:
         # Pick the next entry to assign
         area1, area2 = rect1.area(), rect2.area()
         entry = _pick_next(entries, rect1, area1, rect2, area2)
-        
-        # Add it to the group whose covering rectangle will have to be enlarged the least
+        # Add it to the group whose covering rectangle will have to be enlarged the least to accommodate it.
+        # Resolve ties by adding the entry to the group with the smaller area, then to the one with fewer
+        # entries, then to either.
         urect1, urect2 = rect1.union(entry.rect), rect2.union(entry.rect)
-        ua1, ua2 = urect1.area(), urect2.area()
-        
-        if not np.isfinite(ua1) or not np.isfinite(ua2) or not np.isfinite(area1) or not np.isfinite(area2):
-            enlargement1 = urect1.perimeter() / 2.0 - rect1.perimeter() / 2.0
-            enlargement2 = urect2.perimeter() / 2.0 - rect2.perimeter() / 2.0
-        else:
-            enlargement1 = ua1 - area1
-            enlargement2 = ua2 - area2
-            if not np.isfinite(enlargement1) or not np.isfinite(enlargement2):
-                enlargement1 = urect1.perimeter() / 2.0 - rect1.perimeter() / 2.0
-                enlargement2 = urect2.perimeter() / 2.0 - rect2.perimeter() / 2.0
-
-        if math.isclose(enlargement1, enlargement2, rel_tol=EPSILON):
-            if math.isclose(area1, area2, rel_tol=EPSILON):
+        enlargement1 = urect1.area() - area1
+        enlargement2 = urect2.area() - area2
+        if enlargement1 == enlargement2:
+            if area1 == area2:
                 group = group1 if len1 <= len2 else group2
             else:
                 group = group1 if area1 < area2 else group2
@@ -107,19 +97,8 @@ def _pick_seeds(entries: List[RTreeEntry[T]]) -> (RTreeEntry[T], RTreeEntry[T]):
     seeds = None
     max_wasted_area = None
     for e1, e2 in itertools.combinations(entries, 2):
-        a1 = e1.rect.area()
-        a2 = e2.rect.area()
-        u_rect = e1.rect.union(e2.rect)
-        ua = u_rect.area()
-        
-        if not np.isfinite(ua):
-            # Fallback to margin
-            wasted_area = u_rect.perimeter() / 2.0 - e1.rect.perimeter() / 2.0 - e2.rect.perimeter() / 2.0
-        else:
-            wasted_area = ua - a1 - a2
-            if not np.isfinite(wasted_area):
-                wasted_area = u_rect.perimeter() / 2.0 - e1.rect.perimeter() / 2.0 - e2.rect.perimeter() / 2.0
-                
+        combined_rect = e1.rect.union(e2.rect)
+        wasted_area = combined_rect.area() - e1.rect.area() - e2.rect.area()
         if max_wasted_area is None or wasted_area > max_wasted_area:
             max_wasted_area = wasted_area
             seeds = (e1, e2)
@@ -134,21 +113,8 @@ def _pick_next(remaining_entries: List[RTreeEntry[T]],
     max_diff = None
     result = None
     for e in remaining_entries:
-        u1 = group1_rect.union(e.rect)
-        u2 = group2_rect.union(e.rect)
-        ua1 = u1.area()
-        ua2 = u2.area()
-        
-        if not np.isfinite(ua1) or not np.isfinite(ua2) or not np.isfinite(group1_area) or not np.isfinite(group2_area):
-            d1 = u1.perimeter() / 2.0 - group1_rect.perimeter() / 2.0
-            d2 = u2.perimeter() / 2.0 - group2_rect.perimeter() / 2.0
-        else:
-            d1 = ua1 - group1_area
-            d2 = ua2 - group2_area
-            if not np.isfinite(d1) or not np.isfinite(d2):
-                d1 = u1.perimeter() / 2.0 - group1_rect.perimeter() / 2.0
-                d2 = u2.perimeter() / 2.0 - group2_rect.perimeter() / 2.0
-                
+        d1 = group1_rect.union(e.rect).area() - group1_area
+        d2 = group2_rect.union(e.rect).area() - group2_area
         diff = math.fabs(d1 - d2)
         if max_diff is None or diff > max_diff:
             max_diff = diff

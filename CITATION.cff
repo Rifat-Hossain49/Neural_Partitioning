@@ -1,0 +1,13 @@
+cff-version: 1.2.0
+message: "If you use this software or artifact, please cite the WAHARP paper."
+title: "WAHARP: Amortizing Workload-Aware R-tree Packing with a Neural Policy"
+type: software
+authors:
+  - family-names: Farazi
+    given-names: Musa Tur
+  - family-names: Hossain
+    given-names: Md. Rifat
+  - family-names: Haider
+    given-names: Chowdhury Mohammad Rakin
+repository-code: "https://github.com/Rifat-Hossain49/Neural_Partitioning"
+license: MIT

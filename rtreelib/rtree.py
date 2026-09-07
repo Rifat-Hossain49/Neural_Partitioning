@@ -46,7 +46,6 @@ class RTreeNode(Generic[T]):
         self._is_leaf = is_leaf
         self.parent = parent
         self.entries = entries or []
-        self._mbr = None
 
     def __repr__(self):
         num_children = len(self.entries)
@@ -71,13 +70,8 @@ class RTreeNode(Generic[T]):
             return next(entry for entry in self.parent.entries if entry.child is self)
         return None
 
-    def get_bounding_rect(self) -> Rect:
-        """Returns the bounding rectangle of all entries in this node (cached)."""
-        if getattr(self, '_mbr', None) is None:
-            if not self.entries:
-                return None
-            self._mbr = union_all([entry.rect for entry in self.entries])
-        return self._mbr
+    def get_bounding_rect(self):
+        return union_all([entry.rect for entry in self.entries])
 
 
 class RTreeBase(Generic[T]):
@@ -172,54 +166,6 @@ class RTreeBase(Generic[T]):
             for e in leaf.entries:
                 if entry_condition is None or entry_condition(e):
                     yield e
-
-    def nearest_neighbor(self, point: Location, k: int = 1) -> List[RTreeEntry[T]]:
-        """
-        Finds the k-nearest neighbors to a given point.
-        :param point: Check point
-        :param k: Number of neighbors to find
-        :return: List of k nearest entries
-        """
-        import heapq
-        from rtreelib.models import Point
-
-        if not isinstance(point, Point):
-             # Try to convert tuple/list to Point if needed, or assume it has x/y
-             if hasattr(point, 'x') and hasattr(point, 'y'):
-                 pass 
-             elif len(point) >= 2:
-                 point = Point(point[0], point[1])
-        
-        # Priority queue stores tuples of (distance_squared, unique_id, item)
-        # item can be an RTreeNode or an RTreeEntry
-        # We use minimum heap, so we store positive distances.
-        pq = [(0.0, id(self.root), self.root)]
-        
-        nearest_entries = []
-        
-        while pq:
-            dist_sq, _, item = heapq.heappop(pq)
-            if isinstance(item, RTreeEntry) and item.is_leaf:
-                 nearest_entries.append(item)
-                 if len(nearest_entries) == k:
-                     return nearest_entries
-            elif isinstance(item, RTreeNode):
-                # Expand node
-                children = item.entries
-                for child in children:
-                    # distance to child MBR
-                    child_dist = child.rect.min_dist_sq(point)
-                    
-                    if child.is_leaf:
-                        # child is an entry wrapper for data. 
-                        # In this implementation, RTreeNode.entries contains RTreeEntry objects.
-                        # We push these leaf entries to PQ with their actual distance.
-                         heapq.heappush(pq, (child_dist, id(child), child))
-                    else:
-                        # Internal node, child.child is the RTreeNode
-                        # We push the child node (RTreeNode) to PQ
-                        heapq.heappush(pq, (child_dist, id(child.child), child.child))
-        return nearest_entries
 
     def search_nodes(self, condition: Callable[[RTreeNode[T]], bool], leaves=True) -> Iterable[RTreeNode[T]]:
         """
@@ -359,41 +305,6 @@ class RTreeBase(Generic[T]):
         for leaf in self.get_leaves():
             for entry in leaf.entries:
                 yield entry
-
-    def compute_overlap(self, node: Optional[RTreeNode[T]] = None) -> float:
-        """
-        Compute the total sibling overlap in the tree.
-        
-        Args:
-            node: Node to compute overlap for (default: root)
-            
-        Returns:
-            Total overlap area
-        """
-        if node is None:
-            node = self.root
-            
-        if node.is_leaf:
-            return 0.0
-            
-        overlap = 0.0
-        children = node.entries
-        
-        # Compute overlap between all pairs of children
-        for i in range(len(children)):
-            for j in range(i + 1, len(children)):
-                rect1 = children[i].rect
-                rect2 = children[j].rect
-                
-                # get_intersection_area handles N-dim and returns 0.0 if not intersecting
-                overlap += rect1.get_intersection_area(rect2)
-        
-        # Recursively compute overlap for all children
-        for child_entry in children:
-            if not child_entry.is_leaf:
-                overlap += self.compute_overlap(child_entry.child)
-        
-        return overlap
 
 
 def _add_node_to_level(levels: List[List[RTreeNode[T]]], node: RTreeNode[T], level: int) -> Iterable[None]:

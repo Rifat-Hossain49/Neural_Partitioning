@@ -1,0 +1,28 @@
+{
+  "by_depth": {
+    "0": {
+      "fill": 0.01171875,
+      "mean_entries": 6.0,
+      "nodes": 1
+    },
+    "1": {
+      "fill": 0.9309895833333334,
+      "mean_entries": 476.6666666666667,
+      "nodes": 6
+    },
+    "2": {
+      "fill": 0.9999569766171329,
+      "mean_entries": 511.97797202797204,
+      "nodes": 2860
+    }
+  },
+  "height": 3,
+  "internal_nodes": 7,
+  "leaf_nodes": 2860,
+  "max_entries": 512,
+  "mean_fill": 0.999467948857691,
+  "mean_sibling_overlap": 0.07618778511784186,
+  "min_entries": 6,
+  "p50_fill": 1.0,
+  "total_nodes": 2867
+}

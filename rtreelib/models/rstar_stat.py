@@ -1,30 +1,39 @@
-from typing import List, Dict, Union
+from typing import List, Dict
+from .axis import Axis
+from .dimension import Dimension
 from .entry_distribution import EntryDistribution
 from ..rtree import EntryDivision
-
-# Axis is now an integer (dimension index) or str for backward compat
-Axis = Union[int, str]
-Dimension = str  # 'min' or 'max'
 
 
 class RStarStat:
     """
-    Class used for caching metrics as part of the R*-Tree split algorithm. 
-    Supports N-dimensional data where axes are indexed 0 to N-1.
+    Class used for caching metrics as part of the R*-Tree split algorithm. These metrics are primarily the list of
+    possible entry distributions along each axis ('x' or 'y') and dimension ('min' or 'max'), which are required by
+    multiple steps of the split algorithm. In particular, the algorithm first requires selecting the optimum split axis
+    (based on minimum total perimeter of all possible distributions along that axis), and then the optimum split index
+    of all possible distributions along the optimum axis (based on minimum overlap). To avoid having to recompute the
+    list of possible distributions, this class is used to cache them so they can be calculated once, and then used for
+    both steps. This class also provides some helper methods for getting the total perimeter and unique distributions
+    along a given axis.
     """
 
-    def __init__(self, num_dims: int = 2):
-        self.num_dims = num_dims
-        # stat[axis_idx][dimension] = list of distributions
-        self.stat: Dict[int, Dict[Dimension, List[EntryDistribution]]] = {}
-        for axis in range(num_dims):
-            self.stat[axis] = {'min': [], 'max': []}
+    def __init__(self):
+        self.stat: Dict[Axis, Dict[Dimension, List[EntryDistribution]]] = {
+            'x': {
+                'min': [],
+                'max': []
+            },
+            'y': {
+                'min': [],
+                'max': []
+            }
+        }
         self.unique_distributions: List[EntryDistribution] = []
 
-    def add_distribution(self, axis: int, dimension: Dimension, division: EntryDivision):
+    def add_distribution(self, axis: Axis, dimension: Dimension, division: EntryDivision):
         """
         Adds a distribution of entries for the given axis and dimension.
-        :param axis: Axis index (0 to num_dims-1)
+        :param axis: Axis ('x' or 'y')
         :param dimension: Dimension ('min' or 'max')
         :param division: Entry division
         """
@@ -32,26 +41,25 @@ class RStarStat:
         if distribution is None:
             distribution = EntryDistribution(division)
             self.unique_distributions.append(distribution)
-        
-        if axis not in self.stat:
-            self.stat[axis] = {'min': [], 'max': []}
         self.stat[axis][dimension].append(distribution)
 
-    def get_axis_perimeter(self, axis: int) -> float:
+    def get_axis_perimeter(self, axis: Axis):
         """
-        Returns the total overall perimeter of all distributions along the given axis.
-        :param axis: Axis index
+        Returns the total overall perimeter of all distributions along the given axis (sorted by both min and max).
+        :param axis: Axis ('x' or 'y')
         :return: Total overall perimeter for all distributions along the axis
         """
-        distributions_min = self.stat.get(axis, {}).get('min', [])
-        distributions_max = self.stat.get(axis, {}).get('max', [])
+        distributions_min = self.stat[axis]['min']
+        distributions_max = self.stat[axis]['max']
         return sum([d.perimeter for d in (distributions_min + distributions_max)])
 
-    def get_axis_unique_distributions(self, axis: int) -> List[EntryDistribution]:
+    def get_axis_unique_distributions(self, axis: Axis) -> List[EntryDistribution]:
         """
         Returns a list of all unique entry distributions for a given axis
-        :param axis: Axis index
+        :param axis: Axis ('x' or 'y')
         :return: List of unique entry distributions for the given axis
         """
-        distributions = self.stat.get(axis, {}).get('min', []) + self.stat.get(axis, {}).get('max', [])
+        # Use dict.fromkeys() to preserve order. Though order is not technically relevant, it helps to keep the
+        # split algorithm deterministic (and reduces flakiness in unit tests).
+        distributions = self.stat[axis]['min'] + self.stat[axis]['max']
         return list(dict.fromkeys(distributions).keys())

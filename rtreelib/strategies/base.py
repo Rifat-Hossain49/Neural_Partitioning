@@ -3,7 +3,6 @@ This module defines strategies and helper functions that are shared by more than
 """
 
 import math
-import numpy as np
 from typing import TypeVar, List
 from ..rtree import RTreeBase, RTreeEntry, RTreeNode, EPSILON
 from rtreelib.models import Rect, union_all
@@ -35,57 +34,23 @@ def insert(tree: RTreeBase[T], data: T, rect: Rect) -> RTreeEntry[T]:
 
 def least_area_enlargement(entries: List[RTreeEntry[T]], rect: Rect) -> RTreeEntry[T]:
     """
-    Selects a child entry that requires least area enlargement.
-    Robust for high dimensions: if area overflows, falls back to sum of edge lengths (margin).
+    Selects a child entry that requires least area enlargement for inserting an entry with the given bounding box. This
+    is used as the sole criterion for choosing a leaf node in the original Guttman implementation of the R-tree, and is
+    also used in the R*-tree implementation for the level above the leaf nodes (for higher levels, R*-tree uses least
+    overlap enlargement instead of least area enlargement).
     """
-    if not entries:
-        raise ValueError("least_area_enlargement called with empty entries")
-        
-    areas = []
-    enlargements = []
-    
-    for child in entries:
-        a = child.rect.area()
-        # Use log or margin if area is inf
-        if not np.isfinite(a):
-            # Fallback to margin (sum of edge lengths)
-            a = child.rect.perimeter() / 2.0
-            enlargement = child.rect.union(rect).perimeter() / 2.0 - a
-        else:
-            u_area = child.rect.union(rect).area()
-            if not np.isfinite(u_area):
-                # Fallback to margin enlargement
-                enlargement = child.rect.union(rect).perimeter() / 2.0 - child.rect.perimeter() / 2.0
-            else:
-                enlargement = u_area - a
-        
-        areas.append(a)
-        enlargements.append(enlargement)
-        
+    areas = [child.rect.area() for child in entries]
+    enlargements = [rect.union(child.rect).area() - areas[i] for i, child in enumerate(entries)]
     min_enlargement = min(enlargements)
-    
-    # Handle nan in min_enlargement (should not happen with isfinite check but just in case)
-    if not np.isfinite(min_enlargement):
-        # Last resort: just pick first
-        return entries[0]
-        
     indices = [i for i, v in enumerate(enlargements) if math.isclose(v, min_enlargement, rel_tol=EPSILON)]
-    
     # If a single entry is a clear winner, choose that entry. Otherwise, if there are multiple entries having the
     # same enlargement, choose the entry having the smallest area as a tie-breaker.
     if len(indices) == 1:
         return entries[indices[0]]
-    elif not indices:
-        # This could happen if math.isclose fails for some reason
-        return entries[0]
     else:
-        # Tie-breaker: smallest area (or margin)
         min_area = min([areas[i] for i in indices])
-        # Find index in the original list
-        for i in indices:
-            if math.isclose(areas[i], min_area, rel_tol=EPSILON):
-                return entries[i]
-        return entries[indices[0]]
+        i = areas.index(min_area)
+        return entries[i]
 
 
 def adjust_tree_strategy(tree: RTreeBase[T], node: RTreeNode[T], split_node: RTreeNode[T] = None) -> None:

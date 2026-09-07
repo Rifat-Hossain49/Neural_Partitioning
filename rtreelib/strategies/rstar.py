@@ -4,13 +4,137 @@ https://infolab.usc.edu/csci599/Fall2001/paper/rstar-tree.pdf
 """
 
 import math
-import numpy as np
+import os
 from typing import List, TypeVar, Iterable, Callable, Any, Dict, Optional
+import numpy as np
 from ..rtree import RTreeBase, RTreeEntry, RTreeNode, DEFAULT_MAX_ENTRIES, EPSILON, EntryDivision, EntryOrdering
 from rtreelib.models import Rect, Axis, Dimension, EntryDistribution, RStarStat, RStarCache, union_all
 from .base import insert, least_area_enlargement, adjust_tree_strategy
 
 T = TypeVar('T')
+
+_TORCH = None
+_TORCH_IMPORT_ATTEMPTED = False
+
+
+def _get_torch():
+    global _TORCH, _TORCH_IMPORT_ATTEMPTED
+    if not _TORCH_IMPORT_ATTEMPTED:
+        _TORCH_IMPORT_ATTEMPTED = True
+        try:
+            import torch
+            _TORCH = torch
+        except Exception:
+            _TORCH = None
+    return _TORCH
+
+
+def _normalize_accelerator(accelerator: Optional[str]) -> str:
+    value = accelerator or os.environ.get('RTREELIB_RSTAR_ACCELERATOR', 'numpy')
+    value = str(value).strip().lower()
+    if value in ('0', 'false', 'off', 'none', 'python'):
+        return 'python'
+    if value in ('gpu', 'cuda'):
+        return 'cuda'
+    if value in ('cpu', 'numpy', 'np'):
+        return 'numpy'
+    if value == 'auto':
+        torch = _get_torch()
+        if torch is not None and torch.cuda.is_available():
+            return 'cuda'
+        return 'numpy'
+    return 'numpy'
+
+
+def _entry_rects_array(entries: List[RTreeEntry[T]]) -> np.ndarray:
+    return np.asarray(
+        [[e.rect.min_x, e.rect.min_y, e.rect.max_x, e.rect.max_y] for e in entries],
+        dtype=np.float64,
+    )
+
+
+def _rect_array(rect: Rect) -> np.ndarray:
+    return np.asarray([rect.min_x, rect.min_y, rect.max_x, rect.max_y], dtype=np.float64)
+
+
+def _overlap_enlargements_numpy(entries: List[RTreeEntry[T]], rect: Rect) -> List[float]:
+    rects = _entry_rects_array(entries)
+    insert_rect = _rect_array(rect)
+
+    left = np.maximum(rects[:, None, 0], rects[None, :, 0])
+    bottom = np.maximum(rects[:, None, 1], rects[None, :, 1])
+    right = np.minimum(rects[:, None, 2], rects[None, :, 2])
+    top = np.minimum(rects[:, None, 3], rects[None, :, 3])
+    overlaps = np.maximum(0.0, right - left) * np.maximum(0.0, top - bottom)
+    np.fill_diagonal(overlaps, 0.0)
+    base_overlap = overlaps.sum(axis=1)
+
+    expanded = rects.copy()
+    expanded[:, 0] = np.minimum(expanded[:, 0], insert_rect[0])
+    expanded[:, 1] = np.minimum(expanded[:, 1], insert_rect[1])
+    expanded[:, 2] = np.maximum(expanded[:, 2], insert_rect[2])
+    expanded[:, 3] = np.maximum(expanded[:, 3], insert_rect[3])
+
+    left = np.maximum(expanded[:, None, 0], rects[None, :, 0])
+    bottom = np.maximum(expanded[:, None, 1], rects[None, :, 1])
+    right = np.minimum(expanded[:, None, 2], rects[None, :, 2])
+    top = np.minimum(expanded[:, None, 3], rects[None, :, 3])
+    expanded_overlaps = np.maximum(0.0, right - left) * np.maximum(0.0, top - bottom)
+    np.fill_diagonal(expanded_overlaps, 0.0)
+    return (expanded_overlaps.sum(axis=1) - base_overlap).tolist()
+
+
+def _overlap_enlargements_torch(entries: List[RTreeEntry[T]], rect: Rect, device_name: str) -> Optional[List[float]]:
+    torch = _get_torch()
+    if torch is None:
+        return None
+    if device_name == 'cuda' and not torch.cuda.is_available():
+        return None
+
+    device = torch.device(device_name)
+    rects = torch.tensor(_entry_rects_array(entries), dtype=torch.float64, device=device)
+    insert_rect = torch.tensor(_rect_array(rect), dtype=torch.float64, device=device)
+
+    left = torch.maximum(rects[:, None, 0], rects[None, :, 0])
+    bottom = torch.maximum(rects[:, None, 1], rects[None, :, 1])
+    right = torch.minimum(rects[:, None, 2], rects[None, :, 2])
+    top = torch.minimum(rects[:, None, 3], rects[None, :, 3])
+    overlaps = torch.clamp(right - left, min=0.0) * torch.clamp(top - bottom, min=0.0)
+    overlaps.fill_diagonal_(0.0)
+    base_overlap = overlaps.sum(dim=1)
+
+    expanded = rects.clone()
+    expanded[:, 0] = torch.minimum(expanded[:, 0], insert_rect[0])
+    expanded[:, 1] = torch.minimum(expanded[:, 1], insert_rect[1])
+    expanded[:, 2] = torch.maximum(expanded[:, 2], insert_rect[2])
+    expanded[:, 3] = torch.maximum(expanded[:, 3], insert_rect[3])
+
+    left = torch.maximum(expanded[:, None, 0], rects[None, :, 0])
+    bottom = torch.maximum(expanded[:, None, 1], rects[None, :, 1])
+    right = torch.minimum(expanded[:, None, 2], rects[None, :, 2])
+    top = torch.minimum(expanded[:, None, 3], rects[None, :, 3])
+    expanded_overlaps = torch.clamp(right - left, min=0.0) * torch.clamp(top - bottom, min=0.0)
+    expanded_overlaps.fill_diagonal_(0.0)
+    return (expanded_overlaps.sum(dim=1) - base_overlap).detach().cpu().tolist()
+
+
+def _overlap_enlargements_python(entries: List[RTreeEntry[T]], rect: Rect) -> List[float]:
+    overlaps = [overlap(e.rect, [e2.rect for e2 in without(entries, e)]) for e in entries]
+    return [
+        overlap(e.rect.union(rect), [e2.rect for e2 in without(entries, e)]) - overlaps[i]
+        for i, e in enumerate(entries)
+    ]
+
+
+def _overlap_enlargements(entries: List[RTreeEntry[T]], rect: Rect, accelerator: Optional[str]) -> List[float]:
+    backend = _normalize_accelerator(accelerator)
+    if backend == 'python' or len(entries) <= 1:
+        return _overlap_enlargements_python(entries, rect)
+    if backend == 'cuda':
+        values = _overlap_enlargements_torch(entries, rect, 'cuda')
+        if values is not None:
+            return values
+    return _overlap_enlargements_numpy(entries, rect)
 
 
 # noinspection PyProtectedMember
@@ -31,6 +155,10 @@ def rstar_insert(tree: RTreeBase[T], data: T, rect: Rect) -> RTreeEntry[T]:
 
 # noinspection PyProtectedMember
 def rstar_adjust_tree(tree: RTreeBase[T], node: RTreeNode[T], split_node: RTreeNode[T] = None) -> None:
+    # Invalidate the cache if we have a split node, since the tree now has a different structure. The cache is
+    # repopulated if necessary in _choose_subtree_reinsert if we have additional entries that still need to be
+    # reinserted as part of this insert operation.
+    # TODO: Candidate for optimization (modify the cache in place instead of blowing it all away)
     if tree._cache is not None and split_node is not None:
         tree._cache.levels = None
     # Invoke adjust_tree_strategy from base
@@ -106,11 +234,9 @@ def reinsert(tree: RTreeBase[T], node: RTreeNode[T], levels_from_leaf: int):
 
 
 def _dist(p1, p2):
-    """N-dimensional Euclidean distance."""
-    import numpy as np
-    p1_arr = np.array(p1) if not isinstance(p1, np.ndarray) else p1
-    p2_arr = np.array(p2) if not isinstance(p2, np.ndarray) else p2
-    return float(np.sqrt(np.sum((p2_arr - p1_arr)**2)))
+    x1, y1 = p1
+    x2, y2 = p2
+    return math.sqrt((x2-x1)**2 + (y2-y1)**2)
 
 
 # noinspection PyProtectedMember
@@ -141,7 +267,12 @@ def _choose_subtree_reinsert(tree: RTreeBase[T], rect: Rect, levels_from_leaf: i
     nodes = tree._cache.levels[depth - levels_from_leaf - 1]
     entries = [node.parent_entry for node in nodes]
     if is_leaf_level:
-        e = least_overlap_enlargement(entries, rect)
+        accelerator = getattr(tree, 'rstar_accelerator', None)
+        e = (
+            least_overlap_enlargement(entries, rect)
+            if accelerator is None
+            else least_overlap_enlargement(entries, rect, accelerator)
+        )
     else:
         e = least_area_enlargement(entries, rect)
     return e.child
@@ -161,7 +292,12 @@ def rstar_choose_leaf(tree: RTreeBase[T], entry: RTreeEntry[T]) -> RTreeNode[T]:
     node = tree.root
     while not node.is_leaf:
         if _are_children_leaves(node):
-            e = least_overlap_enlargement(node.entries, entry.rect)
+            accelerator = getattr(tree, 'rstar_accelerator', None)
+            e = (
+                least_overlap_enlargement(node.entries, entry.rect)
+                if accelerator is None
+                else least_overlap_enlargement(node.entries, entry.rect, accelerator)
+            )
         else:
             e = least_area_enlargement(node.entries, entry.rect)
         node = e.child
@@ -176,47 +312,28 @@ def _are_children_leaves(node: RTreeNode[T]) -> bool:
     return False
 
 
-def least_overlap_enlargement(entries: List[RTreeEntry[T]], rect: Rect) -> RTreeEntry[T]:
+def least_overlap_enlargement(
+    entries: List[RTreeEntry[T]],
+    rect: Rect,
+    accelerator: Optional[str] = None,
+) -> RTreeEntry[T]:
     """
-    Least overlap enlargement strategy.
-    Robust for high dimensions: handles inf/nan values by falling back to area enlargement.
+    Least overlap enlargement strategy (used when inserting an entry into a leaf node).
+    :param entries: Entries in the node where the insert is occurring
+    :param rect: Bounding rectangle of the entry being inserted
+    :return: Returns the entry from 'entries' whose bounding rectangle results in least overlap enlargement if it is
+        expanded to accommodate 'rect'. In case of tie, this strategy falls back to least area enlargement.
     """
-    if not entries:
-        raise ValueError("least_overlap_enlargement called with empty entries")
-        
-    overlaps = []
-    for e in entries:
-        ov = overlap(e.rect, [e2.rect for e2 in without(entries, e)])
-        overlaps.append(ov)
-        
-    overlap_enlargements = []
-    for i, e in enumerate(entries):
-        try:
-            u_overlap = overlap(e.rect.union(rect), [e2.rect for e2 in without(entries, e)])
-            enlargement = u_overlap - overlaps[i]
-            # If we get nan (inf - inf), use a large finite value or 0? 
-            # Better fallback to area enlargement.
-            if not np.isfinite(enlargement):
-                enlargement = float('inf')
-        except Exception:
-            enlargement = float('inf')
-        overlap_enlargements.append(enlargement)
-        
+    overlap_enlargements = _overlap_enlargements(entries, rect, accelerator)
     min_enlargement = min(overlap_enlargements)
-    
-    # If all are inf, fallback immediately
-    if not np.isfinite(min_enlargement):
-        return least_area_enlargement(entries, rect)
-        
     indices = [i for i, v in enumerate(overlap_enlargements) if math.isclose(v, min_enlargement, rel_tol=EPSILON)]
-    
     # If a single entry is a clear winner, choose that entry.
     if len(indices) == 1:
         return entries[indices[0]]
     else:
-        # Tie-breaker: least area enlargement
-        subset = [entries[i] for i in indices]
-        return least_area_enlargement(subset, rect)
+        # If multiple entries have the same overlap enlargement, use least area enlargement strategy as a tie-breaker.
+        entries = [entries[i] for i in indices]
+        return least_area_enlargement(entries, rect)
 
 
 def without(items: List[T], item: T) -> List[T]:
@@ -234,22 +351,18 @@ def overlap(rect: Rect, rects: List[Rect]) -> float:
 
 def get_rstar_stat(entries: List[RTreeEntry[T]], min_entries: int, max_entries: int) -> RStarStat:
     """
-    Calculates metrics used by the split algorithm when splitting an overflowing node.
-    N-dimensional version: iterates over all dimension indices.
+    Calculates metrics used by the split algorithm when splitting an overflowing node. Since these metrics are used
+    in multiple steps, they are calculated here once and then cached. These metrics are primarily the list of possible
+    divisions of entries along each axis ('x' and 'y'), as well as dimension ('min' and 'max'). The RStarStat helper
+    class also provides methods for calculating the total perimeter value along each axis.
     :param entries: List of entries in the node being split
     :param min_entries: Minimum number of entries per node
     :param max_entries: Maximum number of entries per node
     :return: Cached statistics for this list of entries
     """
-    # Determine number of dimensions from the first entry
-    if not entries:
-        return RStarStat(num_dims=2)
-    num_dims = entries[0].rect.dims
-    
     sort_divisions: Dict[EntryOrdering, List[EntryDivision]] = {}
-    stat = RStarStat(num_dims=num_dims)
-    
-    for axis in range(num_dims):
+    stat = RStarStat()
+    for axis in ['x', 'y']:
         for dimension in ['min', 'max']:
             sorted_entries = tuple(sorted(entries, key=_get_sort_key(axis, dimension)))
             divisions = sort_divisions.get(sorted_entries, None)
@@ -261,29 +374,27 @@ def get_rstar_stat(entries: List[RTreeEntry[T]], min_entries: int, max_entries: 
     return stat
 
 
-def _get_sort_key(axis: int, dimension: Dimension) -> Callable[[RTreeEntry[T]], Any]:
-    """Returns a sort key for entries based on axis index and dimension."""
-    if dimension == 'min':
-        return lambda e: e.rect.min[axis]
-    else:  # dimension == 'max'
-        return lambda e: e.rect.max[axis]
+def _get_sort_key(axis: Axis, dimension: Dimension) -> Callable[[RTreeEntry[T]], Any]:
+    if axis == 'x' and dimension == 'min':
+        return lambda e: e.rect.min_x
+    if axis == 'x' and dimension == 'max':
+        return lambda e: e.rect.max_x
+    if axis == 'y' and dimension == 'min':
+        return lambda e: e.rect.min_y
+    if axis == 'y' and dimension == 'max':
+        return lambda e: e.rect.max_y
 
 
-def choose_split_axis(stat: RStarStat) -> int:
+def choose_split_axis(stat: RStarStat) -> Axis:
     """
     Determines the axis perpendicular to which the entries should be split, based on the one with the smallest overall
     perimeter after determining all possible divisions of the entries that satisfy min_entries and max_entries.
     :param stat: RStarStat instance (as returned by get_rstar_stat)
-    :return: Best split axis index (0 to num_dims-1)
+    :return: Best split axis ('x' or 'y')
     """
-    best_axis = 0
-    best_perimeter = stat.get_axis_perimeter(0)
-    for axis in range(1, stat.num_dims):
-        perimeter = stat.get_axis_perimeter(axis)
-        if perimeter < best_perimeter:
-            best_perimeter = perimeter
-            best_axis = axis
-    return best_axis
+    perimeter_x = stat.get_axis_perimeter('x')
+    perimeter_y = stat.get_axis_perimeter('y')
+    return 'x' if perimeter_x <= perimeter_y else 'y'
 
 
 def get_possible_divisions(entries: Iterable[RTreeEntry[T]], min_entries: int, max_entries: int) -> List[EntryDivision]:
@@ -348,11 +459,19 @@ def rstar_split(tree: RTreeBase[T], node: RTreeNode[T]) -> RTreeNode[T]:
 class RStarTree(RTreeBase[T]):
     """R-tree implementation that uses R* strategies for insertion, splitting, and deletion."""
 
-    def __init__(self, max_entries: int = DEFAULT_MAX_ENTRIES, min_entries: int = None):
+    def __init__(
+            self,
+            max_entries: int = DEFAULT_MAX_ENTRIES,
+            min_entries: int = None,
+            rstar_accelerator: Optional[str] = None
+    ):
         """
         Initializes the R-Tree using R* strategies for insertion, splitting, and deletion.
         :param max_entries: Maximum number of entries per node.
         :param min_entries: Minimum number of entries per node. Defaults to ceil(max_entries/2).
+        :param rstar_accelerator: Numeric backend for overlap enlargement scoring. Supported values are
+            'python', 'numpy', 'cuda', and 'auto'. The tree logic remains the original R*-tree insertion algorithm;
+            this only changes how per-node overlap scores are computed.
         """
         super().__init__(
             max_entries=max_entries,
@@ -362,3 +481,4 @@ class RStarTree(RTreeBase[T]):
             adjust_tree=rstar_adjust_tree,
             overflow_strategy=rstar_overflow
         )
+        self.rstar_accelerator = rstar_accelerator

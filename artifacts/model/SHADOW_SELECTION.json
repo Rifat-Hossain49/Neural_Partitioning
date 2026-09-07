@@ -1,0 +1,48 @@
+{
+  "members": [
+    {
+      "domain_ratios": {
+        "arizona": 1.019500079268615,
+        "crimes": 1.0664988462345288,
+        "twitter": 1.0
+      },
+      "means": {
+        "arizona": 19.292,
+        "crimes": 5.084,
+        "twitter": 19.873
+      },
+      "member": 0,
+      "score": 1.3236654233597909
+    },
+    {
+      "domain_ratios": {
+        "arizona": 1.0058658775035672,
+        "crimes": 1.0,
+        "twitter": 1.046143008101444
+      },
+      "means": {
+        "arizona": 19.034,
+        "crimes": 4.767,
+        "twitter": 20.79
+      },
+      "member": 1,
+      "score": 1.3004770819018616
+    },
+    {
+      "domain_ratios": {
+        "arizona": 1.0,
+        "crimes": 1.0111181036291168,
+        "twitter": 1.0360287827705932
+      },
+      "means": {
+        "arizona": 18.923,
+        "crimes": 4.82,
+        "twitter": 20.589
+      },
+      "member": 2,
+      "score": 1.289957689970569
+    }
+  ],
+  "selected_member": 2,
+  "selection_rule": "minimize worst-domain validation access ratio plus 0.25 mean ratio; PLATON/final queries not used"
+}
