@@ -32,6 +32,7 @@ def main() -> None:
     training = read_json(ARTIFACTS / "model" / "FINAL_TRAINING_STATE.json")
     decision = read_json(ARTIFACTS / "ablation" / "FINAL_DECISION.json")
     evaluation = read_json(ARTIFACTS / "final_evaluation" / "FINAL_STATE.json")
+    generalization = read_json(ARTIFACTS / "generalization" / "LODO_STATE.json")
     checkpoint = ARTIFACTS / "model" / "selected.pt"
 
     assert training["status"] == "COMPLETE"
@@ -49,7 +50,26 @@ def main() -> None:
     assert evaluation["queries_per_cell"] == 6000
     assert evaluation["correctness_mismatches"] == 0
     assert evaluation["baseline_rebuilds"] == 0
+    assert generalization["status"] == "COMPLETE"
+    assert generalization["cells"] == 9
+    assert generalization["queries_per_cell"] == 6000
+    assert generalization["correctness_mismatches"] == 0
+    assert generalization["all_folds_frozen_before_final_evaluation"] is True
+    assert generalization["reused_all_domain_dagger_states"] is False
     assert row_count(ARTIFACTS / "final_evaluation" / "ALL_PAIRWISE_SUMMARY.csv") == 36
+    assert row_count(ARTIFACTS / "generalization" / "LODO_RESULTS.csv") == 36
+    assert row_count(ARTIFACTS / "generalization" / "LODO_BY_QUERY_FAMILY.csv") == 108
+    assert row_count(ARTIFACTS / "generalization" / "CORRECTNESS.csv") == 9
+    assert row_count(ARTIFACTS / "generalization" / "CONSTRUCTION_TIMES.csv") == 45
+    assert row_count(ARTIFACTS / "generalization" / "FOLD_TRAINING.csv") == 3
+    for heldout in ("twitter", "crimes", "arizona"):
+        fold = read_json(ARTIFACTS / "generalization" / "folds" / f"heldout_{heldout}_FOLD_STATE.json")
+        assert fold["status"] == "FROZEN"
+        assert fold["heldout"] == heldout
+        assert fold["heldout_data_loaded_before_freeze"] is False
+        assert fold["heldout_final_queries_loaded_before_freeze"] is False
+        assert fold["reused_all_domain_dagger_states"] is False
+        assert fold["teacher_states"] == 20_000
     assert len(list((ARTIFACTS / "construction").glob("*_CONSTRUCTION_ALL.json"))) == 3
     assert len(list((ARTIFACTS / "tree_structure").glob("*_TREE_STRUCTURE.json"))) == 9
 
@@ -57,6 +77,7 @@ def main() -> None:
     print("  selected loss weights: 0.75 listwise / 0.25 classification")
     print("  selected member: 2")
     print("  locked evaluation: 9 cells x 6,000 queries, 0 mismatches")
+    print("  zero-shot LODO: 3 frozen folds, 9 cells x 6,000 queries, 0 mismatches")
 
 
 if __name__ == "__main__":

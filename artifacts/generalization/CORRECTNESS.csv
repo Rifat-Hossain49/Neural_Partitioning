@@ -1,0 +1,10 @@
+dataset,capacity,queries,range_point_mismatches,knn_distance_mismatches,passed
+twitter,128,6000,0,0,True
+twitter,256,6000,0,0,True
+twitter,512,6000,0,0,True
+crimes,128,6000,0,0,True
+crimes,256,6000,0,0,True
+crimes,512,6000,0,0,True
+arizona,128,6000,0,0,True
+arizona,256,6000,0,0,True
+arizona,512,6000,0,0,True

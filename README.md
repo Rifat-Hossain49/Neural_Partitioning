@@ -31,6 +31,18 @@ queries per cell and reported zero correctness mismatches. The full cell-level
 results and confidence intervals are in
 [`artifacts/final_evaluation/`](artifacts/final_evaluation/).
 
+### Leave-one-dataset-out generalization
+
+A zero-shot leave-one-dataset-out experiment trains three additional policies,
+each using only the other two datasets. Fold-specific DAgger states are
+regenerated from the source domains; held-out data and final queries are not
+read until after member selection and checkpoint freezing. Across the nine
+held-out dataset-capacity cells, WAHARP uses 2.1% to 34.5% more logical node
+accesses than PLATON and 0.3% to 28.5% more than the all-domain WAHARP model,
+with zero correctness mismatches. The exact paired results, confidence
+intervals, fold provenance, and plot are in
+[`artifacts/generalization/`](artifacts/generalization/).
+
 ## What is included
 
 ```text
@@ -43,6 +55,7 @@ scripts/kaggle/             Exact historical training/evaluation entry points
 artifacts/ablation/         Loss-weight selection records
 artifacts/model/            Frozen checkpoint and member-selection records
 artifacts/final_evaluation/ Locked aggregate query results
+artifacts/generalization/   Leave-one-dataset-out zero-shot results
 artifacts/construction/     Build-time and action-audit records
 artifacts/tree_structure/   Topology and structural metrics for nine cells
 docs/                       Data and reproduction instructions
@@ -97,6 +110,8 @@ match; this prevents accidental mixing of runs.
 | `artifacts/model/SHADOW_SELECTION.json` | Three-member selection statistics |
 | `artifacts/final_evaluation/FINAL_STATE.json` | Locked evaluation completion gates |
 | `artifacts/final_evaluation/ALL_PAIRWISE_SUMMARY.csv` | Nine cell-level comparisons |
+| `artifacts/generalization/LODO_RESULTS.csv` | Leave-one-dataset-out paired comparisons |
+| `artifacts/generalization/FOLD_TRAINING.csv` | Source domains and frozen fold checkpoints |
 | `artifacts/construction/*_CONSTRUCTION_ALL.json` | Construction times and action audits |
 | `artifacts/tree_structure/*_TREE_STRUCTURE.json` | Tree topology and occupancy |
 

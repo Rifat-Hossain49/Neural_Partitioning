@@ -1,0 +1,4 @@
+heldout,source_domains,teacher_states,selected_member,selected_checkpoint_sha256,heldout_data_loaded_before_freeze,heldout_final_queries_loaded_before_freeze
+twitter,"['crimes', 'arizona']",20000,0,199899d1930f1731748a2ee6e4a61c676c1ce3924ae65b364baef04193780f46,False,False
+crimes,"['twitter', 'arizona']",20000,2,7474f374d01605a72e521218bd565fb07b6b22a73e851d152a94ca54b14827b1,False,False
+arizona,"['twitter', 'crimes']",20000,2,12f50c738d89dcc1ef315473c746eca1778af5ef1fded312bab2f0a04bb9aefc,False,False

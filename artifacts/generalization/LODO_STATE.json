@@ -1,0 +1,16 @@
+{
+  "all_folds_frozen_before_final_evaluation": true,
+  "cells": 9,
+  "correctness_mismatches": 0,
+  "elapsed_seconds": 5418.580894470215,
+  "gpu_names": [
+    "Tesla T4",
+    "Tesla T4"
+  ],
+  "protocol_id": "waharp_lodo_zero_shot_v1_20260919",
+  "queries_per_cell": 6000,
+  "reused_all_domain_dagger_states": false,
+  "stage": "complete",
+  "status": "COMPLETE",
+  "updated_unix": 1789809220.813111
+}
