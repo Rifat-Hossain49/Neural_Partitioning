@@ -12,8 +12,9 @@ from .geometry import bbox, bboxes_for_groups, intersect_matrix, normalized_over
 from .utils import atomic_json, sha256_array
 
 
-def action_cost(entries: np.ndarray, queries: np.ndarray, action_id: int, capacity: int,
-                overlap_weight: float, margin_weight: float) -> float:
+def action_cost_components(entries: np.ndarray, queries: np.ndarray, action_id: int,
+                           capacity: int) -> tuple[float, float, float]:
+    """Return the independently reusable hit, overlap, and margin terms."""
     left, right = split_positions(entries, action_id, capacity)
     groups: list[np.ndarray] = []
     for side in (left, right):
@@ -29,6 +30,12 @@ def action_cost(entries: np.ndarray, queries: np.ndarray, action_id: int, capaci
     root = bbox(entries)
     root_margin = max(float(2.0 * ((root[2] - root[0]) + (root[3] - root[1]))), 1e-9)
     margin = float(np.sum(rect_margin(boxes))) / root_margin
+    return page_hits, overlap, margin
+
+
+def action_cost(entries: np.ndarray, queries: np.ndarray, action_id: int, capacity: int,
+                overlap_weight: float, margin_weight: float) -> float:
+    page_hits, overlap, margin = action_cost_components(entries, queries, action_id, capacity)
     return page_hits + overlap_weight * overlap + margin_weight * margin
 
 
