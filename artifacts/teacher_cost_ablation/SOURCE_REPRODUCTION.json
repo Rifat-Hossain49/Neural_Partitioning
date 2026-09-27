@@ -1,0 +1,73 @@
+{
+  "all_checks_passed": true,
+  "checks": {
+    "dagger_arizona": {
+      "domain_exact": true,
+      "entry_count_exact": true,
+      "level_exact": true,
+      "passed": true,
+      "query_count_exact": true,
+      "raw_cost_max_abs_delta": 1.9073486328125e-06,
+      "record_count": 2000,
+      "regret_max_abs_delta": 3.5762786865234375e-07,
+      "x_exact": true
+    },
+    "dagger_crimes": {
+      "domain_exact": true,
+      "entry_count_exact": true,
+      "level_exact": true,
+      "passed": true,
+      "query_count_exact": true,
+      "raw_cost_max_abs_delta": 9.5367431640625e-07,
+      "record_count": 2000,
+      "regret_max_abs_delta": 5.960464477539062e-07,
+      "x_exact": true
+    },
+    "dagger_twitter": {
+      "domain_exact": true,
+      "entry_count_exact": true,
+      "level_exact": true,
+      "passed": true,
+      "query_count_exact": true,
+      "raw_cost_max_abs_delta": 1.9073486328125e-06,
+      "record_count": 2000,
+      "regret_max_abs_delta": 3.5762786865234375e-07,
+      "x_exact": true
+    },
+    "initial_arizona": {
+      "domain_exact": true,
+      "entry_count_exact": true,
+      "level_exact": true,
+      "passed": true,
+      "query_count_exact": true,
+      "raw_cost_max_abs_delta": 9.5367431640625e-07,
+      "record_count": 8000,
+      "regret_max_abs_delta": 4.76837158203125e-07,
+      "x_exact": true
+    },
+    "initial_crimes": {
+      "domain_exact": true,
+      "entry_count_exact": true,
+      "level_exact": true,
+      "passed": true,
+      "query_count_exact": true,
+      "raw_cost_max_abs_delta": 1.9073486328125e-06,
+      "record_count": 8000,
+      "regret_max_abs_delta": 5.960464477539062e-07,
+      "x_exact": true
+    },
+    "initial_twitter": {
+      "domain_exact": true,
+      "entry_count_exact": true,
+      "level_exact": true,
+      "passed": true,
+      "query_count_exact": true,
+      "raw_cost_max_abs_delta": 9.5367431640625e-07,
+      "record_count": 8000,
+      "regret_max_abs_delta": 4.76837158203125e-07,
+      "x_exact": true
+    }
+  },
+  "protocol_id": "waharp_teacher_cost_ablation_v1_20260926",
+  "source_protocol_id": "waharp_realtrain_v1_three_domain_pageio_20260829"
+}

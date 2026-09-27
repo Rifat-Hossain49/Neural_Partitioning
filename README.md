@@ -2,130 +2,165 @@
 
 [![Artifact checks](https://github.com/Rifat-Hossain49/Neural_Partitioning/actions/workflows/artifact-checks.yml/badge.svg)](https://github.com/Rifat-Hossain49/Neural_Partitioning/actions/workflows/artifact-checks.yml)
 
-Official code and compact evaluation artifact for **WAHARP: Amortizing
-Workload-Aware R-tree Packing with a Neural Policy**.
+Official implementation and compact evaluation artifact for **WAHARP:
+Amortizing Workload-Aware R-tree Packing with a Neural Policy**.
 
-WAHARP is a static, workload-aware R-tree bulk loader. At each recursive
-packing state, a neural policy scores 80 projection-and-page-quota actions.
-The selected action partitions entries using exact page quotas, so every leaf
-respects capacity without a post-processing repair or geometric fallback.
+WAHARP is a static, workload-aware R-tree bulk loader. A frozen neural policy
+scores 80 projection-and-page-quota actions while constructing each level of
+the hierarchy. Exact quotas preserve every entry, enforce node capacity, and
+produce equal-depth leaves without a fallback packing algorithm. Queries use
+ordinary R-tree traversal; the neural model is used only during construction.
 
-## Artifact status
+## Release status
 
-This repository contains the implementation and the frozen model used for the
-locked final evaluation. The selected model uses a 0.75 listwise and 0.25
-classification loss mixture, chosen using validation data only. Final queries
-were not read during loss-weight selection, training, or member selection.
-
-The locked evaluation covers three datasets and capacities 128, 256, and 512:
-
-| Comparison | Cell-geometric-mean change in logical accesses |
-|---|---:|
-| WAHARP vs. PLATON | +2.56% |
-| WAHARP vs. STR | -9.49% |
-| WAHARP vs. TGS | -21.21% |
-
-Positive values mean WAHARP uses more logical accesses; negative values mean
-fewer. Across all nine dataset-capacity cells, the evaluation used 6,000 fixed
-queries per cell and reported zero correctness mismatches. The full cell-level
-results and confidence intervals are in
-[`artifacts/final_evaluation/`](artifacts/final_evaluation/).
-
-### Leave-one-dataset-out generalization
-
-A zero-shot leave-one-dataset-out experiment trains three additional policies,
-each using only the other two datasets. Fold-specific DAgger states are
-regenerated from the source domains; held-out data and final queries are not
-read until after member selection and checkpoint freezing. Across the nine
-held-out dataset-capacity cells, WAHARP uses 2.1% to 34.5% more logical node
-accesses than PLATON and 0.3% to 28.5% more than the all-domain WAHARP model,
-with zero correctness mismatches. The exact paired results, confidence
-intervals, fold provenance, and plot are in
-[`artifacts/generalization/`](artifacts/generalization/).
-
-## What is included
+The repository contains the selected checkpoint used by the paper's locked
+evaluation:
 
 ```text
-realtrain/                  Core WAHARP implementation
-rtreelib/                   Vendored R-tree data structure and baselines
-native/                     Native PLATON and dynamic R-tree evaluation code
-scripts/smoke_test.py       Frozen-model construction smoke test
-scripts/verify_artifacts.py Integrity and completeness checks
-scripts/kaggle/             Exact historical training/evaluation entry points
-artifacts/ablation/         Loss-weight selection records
-artifacts/model/            Frozen checkpoint and member-selection records
-artifacts/final_evaluation/ Locked aggregate query results
-artifacts/generalization/   Leave-one-dataset-out zero-shot results
-artifacts/construction/     Build-time and action-audit records
-artifacts/tree_structure/   Topology and structural metrics for nine cells
-docs/                       Data and reproduction instructions
+artifacts/model/selected.pt
 ```
 
-The internal Python package remains named `realtrain` to preserve direct
-correspondence with the executed experiment scripts.
+Its SHA-256 digest, training protocol, and validation-only member selection are
+recorded in `artifacts/model/FINAL_TRAINING_STATE.json` and
+`artifacts/model/SHADOW_SELECTION.json`. Candidate checkpoints and temporary
+training snapshots are intentionally excluded.
 
-## Quick start
+A later validation-only teacher-cost sweep selected
+`lambda_overlap = 1e-4` and `lambda_margin = 2e-4`. Its compact records are in
+`artifacts/teacher_cost_ablation/`. That pair has **not** replaced the frozen
+paper checkpoint: it requires fresh DAgger trajectories, full-domain training,
+member selection, and locked evaluation first.
 
-Python 3.10-3.12 is recommended. A CPU-only installation is sufficient for the
-checks below.
+## Install and verify
+
+Python 3.10-3.12 is recommended. CPU execution is sufficient for verification
+and small custom datasets.
 
 ```bash
+git clone https://github.com/Rifat-Hossain49/Neural_Partitioning.git
+cd Neural_Partitioning
 python -m venv .venv
 # Linux/macOS: source .venv/bin/activate
 # Windows: .venv\Scripts\activate
 python -m pip install -r requirements.txt
+
 python scripts/verify_artifacts.py
 python scripts/smoke_test.py
 python -m unittest discover -s tests -v
 ```
 
-The smoke test loads `artifacts/model/selected.pt`, verifies the 498-feature,
-80-action contract, and constructs valid trees at all three reported
-capacities using deterministic synthetic rectangles and queries.
+These checks verify the checkpoint hash, feature and action contracts, result
+manifests, query-correctness gates, exact page quotas, and construction at
+capacities 128, 256, and 512.
 
-## Reproduction
+## Run on a custom dataset
 
-There are three practical reproducibility levels:
+The interactive notebook is the easiest entry point:
 
-1. **Artifact verification:** run the quick-start checks without downloading
-   any benchmark data.
-2. **Frozen-model evaluation:** obtain the datasets described in
-   [`docs/DATASETS.md`](docs/DATASETS.md), then use the locked evaluation entry
-   point and its documented input layout.
-3. **Full retraining:** materialize the teacher-state bundle, run the six-point
-   loss sweep, train three final members, select on validation access ratios,
-   and finally execute the locked evaluation.
+[`notebooks/build_and_compare_custom_dataset.ipynb`](notebooks/build_and_compare_custom_dataset.ipynb)
 
-Exact commands and protocol boundaries are documented in
-[`docs/REPRODUCING.md`](docs/REPRODUCING.md). The historical Kaggle entry
-points intentionally fail when required inputs or protocol identifiers do not
-match; this prevents accidental mixing of runs.
+It accepts:
 
-## Key artifact records
+- `.npy` arrays with shape `N x 2` for points or `N x 4` for rectangles;
+- CSV files with `x,y`, longitude/latitude aliases, or
+  `xmin,ymin,xmax,ymax` columns.
 
-| Record | Purpose |
-|---|---|
-| `artifacts/ablation/FINAL_DECISION.json` | Selected loss weights and validation-only rule |
-| `artifacts/model/FINAL_TRAINING_STATE.json` | Frozen model and training protocol |
-| `artifacts/model/SHADOW_SELECTION.json` | Three-member selection statistics |
-| `artifacts/final_evaluation/FINAL_STATE.json` | Locked evaluation completion gates |
-| `artifacts/final_evaluation/ALL_PAIRWISE_SUMMARY.csv` | Nine cell-level comparisons |
-| `artifacts/generalization/LODO_RESULTS.csv` | Leave-one-dataset-out paired comparisons |
-| `artifacts/generalization/FOLD_TRAINING.csv` | Source domains and frozen fold checkpoints |
-| `artifacts/construction/*_CONSTRUCTION_ALL.json` | Construction times and action audits |
-| `artifacts/tree_structure/*_TREE_STRUCTURE.json` | Tree topology and occupancy |
+Coordinates are independently normalized to `[0,1]` on each axis. The
+notebook generates one deterministic construction workload and one shared
+evaluation workload, builds every requested method, measures construction
+time and logical node accesses, and checks range, point, and kNN correctness.
+It runs a synthetic demonstration when no data path is supplied.
 
-Cryptographic hashes are retained inside machine-readable state files for
-artifact integrity. They are provenance metadata, not scientific results.
+The same workflow is available from the command line:
 
-## Data policy
+```bash
+python scripts/custom_dataset_benchmark.py \
+  --data /path/to/rectangles.npy \
+  --capacity 128 \
+  --methods WAHARP,STR,TGS \
+  --output custom_benchmark_output
+```
 
-Raw benchmark datasets, per-query dumps, temporary archives, caches, logs,
-credentials, and superseded checkpoints are intentionally excluded. This
-keeps the artifact reviewable and avoids redistributing third-party data.
+`Guttman` and `RStar` may also be added to `--methods`; their incremental
+insertion can be slow on large inputs. The output directory contains:
+
+```text
+SUMMARY.csv             Build time, total accesses, ratios, and validity
+BY_QUERY_FAMILY.csv     Range, point, and kNN access counts
+PER_QUERY.csv           Per-query measurements and correctness signatures
+RUN_CONFIG.json         Dataset normalization and complete run configuration
+```
+
+The custom-data workflow evaluates transfer of the released checkpoint. It
+does not fine-tune WAHARP on the supplied dataset.
+
+## Recorded results
+
+The frozen all-domain model was evaluated on full Arizona, Crimes, and Twitter
+datasets at `B in {128,256,512}`, with 6,000 paired queries per cell.
+
+| Comparison | Geometric-mean change in logical node accesses |
+|---|---:|
+| WAHARP vs. PLATON | +2.56% |
+| WAHARP vs. STR | -9.49% |
+| WAHARP vs. TGS | -21.21% |
+
+Positive values mean WAHARP used more accesses; negative values mean it used
+fewer. All 54,000 WAHARP/PLATON query pairs passed the correctness checks.
+Cell-level ratios, paired confidence intervals, query-family results, and
+construction records are under `artifacts/final_evaluation/`,
+`artifacts/construction/`, and `artifacts/tree_structure/`.
+
+The leave-one-dataset-out experiment trains one policy on each pair of source
+datasets and evaluates it zero-shot on the third. Its fold provenance,
+confidence intervals, correctness records, and plot are under
+`artifacts/generalization/`.
+
+## Baseline scope
+
+The custom notebook provides WAHARP, STR, TGS, Guttman, and R*-tree through the
+same Python evaluation path. The paper's PLATON numbers use the authors'
+implementation, its native `libspatialindex` build, 100 simulation steps, and
+the recorded rollout budget. That third-party source bundle is not
+redistributed here. Once it is supplied, the strict historical entry points in
+`scripts/kaggle/` reproduce the PLATON protocol. A substitute reimplementation
+should not be reported as the paper's PLATON baseline.
+
+## Repository contents
+
+```text
+realtrain/                           WAHARP actions, features, training, and trees
+rtreelib/                            Vendored R-tree implementation and baselines
+native/                              Native evaluation additions used with PLATON
+notebooks/                           Custom-data build and comparison notebook
+scripts/custom_dataset_benchmark.py Custom benchmark runner
+scripts/kaggle/                      Historical experiment entry points
+scripts/verify_artifacts.py          Compact-artifact integrity checks
+artifacts/model/                     Frozen paper checkpoint and selection records
+artifacts/final_evaluation/          Locked aggregate evaluation results
+artifacts/generalization/            Leave-one-dataset-out evaluation
+artifacts/teacher_cost_ablation/     Validation-only coefficient sweep
+docs/                                Dataset and reproduction instructions
+tests/                               Action and teacher-cost unit tests
+```
+
+The internal package remains named `realtrain` to preserve direct
+correspondence with the executed experiment scripts.
+
+## Reproducing the paper experiments
+
+[`docs/REPRODUCING.md`](docs/REPRODUCING.md) describes the ordered training and
+evaluation protocols. [`docs/DATASETS.md`](docs/DATASETS.md) lists the expected
+dataset sources and representations. Historical scripts deliberately reject
+missing, ambiguous, or protocol-incompatible inputs so that partial runs
+cannot be mistaken for locked results.
+
+Raw datasets, credentials, per-query archives, caches, logs, temporary Kaggle
+outputs, and superseded checkpoints are not committed. Cryptographic hashes
+inside JSON state files are provenance checks, not scientific measurements.
 
 ## License and citation
 
-The code is released under the MIT License. See `THIRD_PARTY_NOTICES.md` for
-vendored code and dataset notices. Citation metadata is available in
-`CITATION.cff`; publication venue and year should be added after acceptance.
+The project is released under the MIT License. See
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md) for vendored code and dataset
+notices. Citation metadata is provided in [`CITATION.cff`](CITATION.cff).

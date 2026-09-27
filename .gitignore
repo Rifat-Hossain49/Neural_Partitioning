@@ -3,9 +3,12 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.ipynb_checkpoints/
 .venv/
 venv/
 .env
+.DS_Store
+Thumbs.db
 *.log
 *.tmp
 *.zip
@@ -13,4 +16,5 @@ venv/
 data/
 outputs/
 checkpoints/
+custom_benchmark_output/
 !artifacts/model/selected.pt

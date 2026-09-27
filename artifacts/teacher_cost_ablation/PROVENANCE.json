@@ -1,0 +1,29 @@
+{
+  "actions": 80,
+  "classification_weight": 0.25,
+  "code_protocol_id": "waharp_teacher_cost_ablation_code_v1_20260926",
+  "final_or_test_queries_read": false,
+  "hit_sha256": "059ae96e44855d7f13854b40f54027e61e4a5b8438ccaac847884131998f7f81",
+  "list_weight": 0.75,
+  "margin_sha256": "2176ff60f807a3b47ef1fc07f48a8b57fa08eea34bc72d4e07ad5d91ac73bed2",
+  "margin_values": [
+    0.0,
+    2e-06,
+    2e-05,
+    0.0002
+  ],
+  "overlap_sha256": "4f17433b08bf69f1c9ec4bd432ffef8cdeb37e62a810fc7900c6c85d12e818e0",
+  "overlap_values": [
+    0.0,
+    1e-05,
+    0.0001,
+    0.001
+  ],
+  "platon_results_read": false,
+  "protocol_id": "waharp_teacher_cost_ablation_v1_20260926",
+  "source_protocol_id": "waharp_realtrain_v1_three_domain_pageio_20260829",
+  "source_root": "/kaggle/input/notebooks/shellshocker/waharp-real-train-b128-v1-three-domain/WAHARP_REALTRAIN_V1_STATE",
+  "states": 30000,
+  "trajectory_bank": "fixed initial states plus DAgger states captured by the historical bootstrap policy",
+  "x_sha256": "1c4fff8de2661fb1da7f7ea763d889314563b810c27023b93401b73ba920f49a"
+}

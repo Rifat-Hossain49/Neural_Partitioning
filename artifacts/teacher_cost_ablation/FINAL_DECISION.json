@@ -1,0 +1,29 @@
+{
+  "elapsed_seconds": 6451.790998458862,
+  "final_or_test_queries_read": false,
+  "historical_pair_selected": false,
+  "platon_results_read": false,
+  "protocol_id": "waharp_teacher_cost_ablation_v1_20260926",
+  "requires_full_retraining_and_locked_evaluation": true,
+  "selected_margin_weight": 0.0002,
+  "selected_overlap_weight": 0.0001,
+  "selection_data": "validation_queries_only",
+  "selection_rule": "minimum three-seed mean of worst-domain validation-access ratio plus 0.25 mean domain ratio",
+  "status": "COMPLETE",
+  "winner": {
+    "arizona_accesses_mean": 37568.0,
+    "arizona_ratio_mean": 1.0104010229273757,
+    "config": "overlap_1x_margin_10x",
+    "crimes_accesses_mean": 9463.0,
+    "crimes_ratio_mean": 1.0532243192978559,
+    "margin_multiplier": 10.0,
+    "margin_weight": 0.0002,
+    "overlap_multiplier": 1.0,
+    "overlap_weight": 0.0001,
+    "seeds": 3,
+    "twitter_accesses_mean": 40767.0,
+    "twitter_ratio_mean": 1.0143339475588986,
+    "validation_score_mean": 1.3117535045067277,
+    "validation_score_std": 0.04619480266407979
+  }
+}

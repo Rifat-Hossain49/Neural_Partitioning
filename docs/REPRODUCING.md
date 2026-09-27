@@ -22,6 +22,7 @@ protocol checks:
 
 ```text
 run_loss_weight_ablation.py  Six loss mixtures, three paired seeds
+run_teacher_cost_ablation.py Sixteen overlap/margin pairs, three paired seeds
 run_final_train.py           Three final members with 0.75/0.25 weights
 run_locked_eval.py           Nine locked dataset-capacity cells
 run_fullscale.py             Capacity-sweep baseline materialization
@@ -48,6 +49,28 @@ The supplemental PLATON-budget experiment is independent of model selection.
 and 25 on one shared fresh 6,000-query workload per dataset. It checkpoints
 each newly generated PLATON action and reuses the recorded rollout-25 cut list
 only after protocol, normalized-data, and construction-query hash checks pass.
+
+The teacher-cost sweep recomputes targets from separately stored page-hit,
+overlap, and margin components on one fixed state/action bank. It selects using
+validation node accesses and does not read final queries or PLATON results. Its
+selected non-historical pair must pass fresh DAgger training and locked final
+evaluation before replacing the released checkpoint.
+
+## Custom datasets
+
+For an exploratory comparison on a separate 2D point or rectangle dataset,
+use `notebooks/build_and_compare_custom_dataset.ipynb` or:
+
+```bash
+python scripts/custom_dataset_benchmark.py \
+  --data /path/to/data.npy \
+  --capacity 128 \
+  --methods WAHARP,STR,TGS
+```
+
+This generates a deterministic workload shared by all methods and validates
+range, point, and kNN answers. It is a transfer evaluation of the frozen model,
+not an exact reproduction of the paper's fixed workloads.
 
 ## 3. Protocol details
 
