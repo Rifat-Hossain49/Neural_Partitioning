@@ -41,10 +41,6 @@ BUNDLES = {
 }
 
 
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
 def compare_executed_code() -> list[str]:
     """Return a report line for each code file that differs from the executed bundle."""
     lines = []
@@ -55,7 +51,8 @@ def compare_executed_code() -> list[str]:
                 continue
             if not path.is_file():
                 lines.append(f"  missing  {row['path']}")
-            elif sha256(path) != row["sha256"]:
+            # Git may rewrite line endings on checkout, so compare LF-normalized content.
+            elif hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest() != row["lf_normalized_sha256"]:
                 lines.append(f"  differs  {row['path']}")
     return lines
 
