@@ -32,12 +32,6 @@ The locked construction and final query workloads are committed under
 the checkpoint and the raw dataset (see
 [Reproducing the paper experiments](#reproducing-the-paper-experiments)).
 
-A later validation-only teacher-cost sweep selected
-`lambda_overlap = 1e-4` and `lambda_margin = 2e-4`. Its compact records are in
-`artifacts/teacher_cost_ablation/`. That pair has **not** replaced the frozen
-paper checkpoint: it requires fresh DAgger trajectories, full-domain training,
-member selection, and locked evaluation first.
-
 ## Install and verify
 
 Python 3.10-3.12 is recommended. CPU execution is sufficient for verification
@@ -119,8 +113,8 @@ fewer. All 54,000 WAHARP/PLATON query pairs passed the correctness checks.
 [`artifacts/WAHARP_ANALYSIS_APPENDIX.md`](artifacts/WAHARP_ANALYSIS_APPENDIX.md)
 is the companion appendix cited by the paper. It lists every reported value:
 cell-level ratios with paired confidence intervals, construction times with
-the PLATON MCTS/native split, the PLATON search-budget sweep, query-family and
-internal/leaf access, paired outcomes, action usage, tree structure, and
+the PLATON MCTS/native split, the PLATON search-budget sweep, query-family
+access, paired outcomes, action usage, tree structure, and
 leave-one-dataset-out transfer. The data behind each paper figure is in
 `artifacts/paper_figures/`. Both are regenerated from the raw records by
 `scripts/make_analysis_appendix.py`.
@@ -163,9 +157,8 @@ artifacts/tree_structure/            Per-cell tree metrics
 artifacts/generalization/            Leave-one-dataset-out evaluation
 artifacts/platon_budget/             PLATON rollout-budget sensitivity
 artifacts/ablation/                  Validation-only loss-weight ablation
-artifacts/teacher_cost_ablation/     Validation-only coefficient sweep
 docs/                                Dataset and reproduction instructions
-tests/                               Action, policy, teacher-cost, and benchmark unit tests
+tests/                               Action-space and custom-benchmark unit tests
 ```
 
 The internal package remains named `realtrain` to preserve direct
@@ -191,7 +184,7 @@ protocol-incompatible inputs so that partial runs cannot be mistaken for
 locked results.
 
 Raw datasets, credentials, per-query archives, caches, logs, temporary Kaggle
-outputs, and superseded checkpoints are not committed. Cryptographic hashes
+outputs, and candidate checkpoints other than the two above are not committed. Cryptographic hashes
 inside JSON state files are provenance checks, not scientific measurements.
 
 ## License and citation

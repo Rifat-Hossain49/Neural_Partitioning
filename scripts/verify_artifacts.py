@@ -33,10 +33,6 @@ def main() -> None:
     decision = read_json(ARTIFACTS / "ablation" / "FINAL_DECISION.json")
     evaluation = read_json(ARTIFACTS / "final_evaluation" / "FINAL_STATE.json")
     generalization = read_json(ARTIFACTS / "generalization" / "LODO_STATE.json")
-    teacher_cost = read_json(ARTIFACTS / "teacher_cost_ablation" / "FINAL_DECISION.json")
-    teacher_reproduction = read_json(
-        ARTIFACTS / "teacher_cost_ablation" / "SOURCE_REPRODUCTION.json"
-    )
     checkpoint = ARTIFACTS / "model" / "selected.pt"
 
     assert training["status"] == "COMPLETE"
@@ -60,15 +56,6 @@ def main() -> None:
     assert generalization["correctness_mismatches"] == 0
     assert generalization["all_folds_frozen_before_final_evaluation"] is True
     assert generalization["reused_all_domain_dagger_states"] is False
-    assert teacher_cost["status"] == "COMPLETE"
-    assert teacher_cost["selection_data"] == "validation_queries_only"
-    assert teacher_cost["final_or_test_queries_read"] is False
-    assert teacher_cost["platon_results_read"] is False
-    assert teacher_cost["selected_overlap_weight"] == 1e-4
-    assert teacher_cost["selected_margin_weight"] == 2e-4
-    assert teacher_cost["requires_full_retraining_and_locked_evaluation"] is True
-    assert teacher_reproduction["all_checks_passed"] is True
-    assert row_count(ARTIFACTS / "teacher_cost_ablation" / "ABLATION_SUMMARY.csv") == 16
     assert row_count(ARTIFACTS / "final_evaluation" / "ALL_PAIRWISE_SUMMARY.csv") == 36
     assert row_count(ARTIFACTS / "generalization" / "LODO_RESULTS.csv") == 36
     assert row_count(ARTIFACTS / "generalization" / "LODO_BY_QUERY_FAMILY.csv") == 108
@@ -86,7 +73,6 @@ def main() -> None:
     assert len(list((ARTIFACTS / "construction").glob("*_CONSTRUCTION_ALL.json"))) == 3
     assert len(list((ARTIFACTS / "tree_structure").glob("*_TREE_STRUCTURE.json"))) == 9
     assert row_count(ARTIFACTS / "final_evaluation" / "CONSTRUCTION_TIMES.csv") == 9
-    assert row_count(ARTIFACTS / "final_evaluation" / "INTERNAL_LEAF_ACCESS.csv") == 108
 
     workload_hashes = read_json(ARTIFACTS / "workloads" / "WORKLOAD_HASHES.json")
     for dataset in ("arizona", "crimes", "twitter"):
@@ -109,7 +95,6 @@ def main() -> None:
     print("  zero-shot LODO: 3 frozen folds, 9 cells x 6,000 queries, 0 mismatches")
     print("  locked workloads: 3 datasets, hashes match")
     print("  PLATON budget: rollouts 1/5/10/25 at B=128, 0 mismatches")
-    print("  teacher-cost sweep: 16 validation-only configurations, source reproduction passed")
 
 
 if __name__ == "__main__":

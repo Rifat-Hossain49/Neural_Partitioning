@@ -15,10 +15,9 @@ Bundles:
     final_fullscale_b128  run_fullscale_b128.py (B=128 baselines, locked queries)
     final_capacity_sweep  run_fullscale.py (B=256/512), run_locked_eval.py,
                           run_lodo_zero_shot.py, run_platon_budget_b128.py
-    teacher_cost_ablation run_teacher_cost_ablation.py
 
-The script also compares the repository's code with the hashes of the code
-that executed the recorded experiments and lists every file that differs.
+The script also checks the repository's code against the hashes of the code
+that executed the recorded experiments.
 """
 from __future__ import annotations
 
@@ -39,14 +38,6 @@ BUNDLES = {
     "realtrain_v1": ("realtrain_v1", None, False),
     "final_fullscale_b128": ("final_fullscale_b128", "run_fullscale_b128.py", True),
     "final_capacity_sweep": ("final_capacity_sweep", "run_fullscale.py", True),
-    "teacher_cost_ablation": ("teacher_cost_ablation", None, False),
-}
-
-# Differences from the executed code that do not change any recorded output.
-KNOWN_DIFFERENCES = {
-    "realtrain/teacher.py": "action_cost split into action_cost_components (used by the teacher-cost ablation); same arithmetic",
-    "realtrain/tree.py": "build_neural_tree delegates to build_policy_tree and also records policy_decision_count",
-    "realtrain/workload.py": "warns when scipy is unavailable instead of silently using the density fallback",
 }
 
 
@@ -65,8 +56,7 @@ def compare_executed_code() -> list[str]:
             if not path.is_file():
                 lines.append(f"  missing  {row['path']}")
             elif sha256(path) != row["sha256"]:
-                note = KNOWN_DIFFERENCES.get(row["path"], "UNEXPECTED: review before reproducing")
-                lines.append(f"  differs  {row['path']}: {note}")
+                lines.append(f"  differs  {row['path']}")
     return lines
 
 

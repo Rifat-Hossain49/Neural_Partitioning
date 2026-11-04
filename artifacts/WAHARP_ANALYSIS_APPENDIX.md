@@ -36,7 +36,7 @@ The model was trained at B = 128 only; B = 256 and 512 reuse the same weights.
 
 ## 3. Construction time (Section 7.3, Figure 3)
 
-Seconds of method-specific construction only: WAHARP = policy inference plus Python tree assembly; PLATON = summed MCTS decision time plus native bulk loading. Dataset loading, final queries, and idle resumable-run time are excluded. Runs were not on identical hardware, so ratios keep this method-specific definition.
+Seconds of method-specific construction only: WAHARP = policy inference plus Python tree assembly; PLATON = summed MCTS decision time plus native bulk loading. Dataset loading, final queries, and idle resumable-run time are excluded. Because the records do not establish identical hardware, timing ratios retain their method-specific definition.
 
 | Dataset | B | WAHARP | STR | TGS | PLATON MCTS | PLATON native | PLATON total | MCTS decisions | MCTS share | PLATON/WAHARP |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -87,23 +87,7 @@ WAHARP/PLATON access ratio by query family (range 4,200, point 300, kNN 1,500 qu
 | Twitter | point | 1.2005 | 1.1859 | 1.1405 |
 | Twitter | knn | 1.2604 | 1.2200 | 1.1613 |
 
-## 5. Internal and leaf access (Section 7.6)
-
-Internal (index) and leaf node visits summed over the 6,000 final queries, extracted from the locked per-query traces; internal + leaf equals the totals in Section 1 for every method and cell. Per-family and STR/TGS counts are in `final_evaluation/INTERNAL_LEAF_ACCESS.csv`. WAHARP and STR/TGS use the Python traversal; PLATON uses its native C++ traversal.
-
-| Dataset | B | WAHARP internal | WAHARP leaf | PLATON internal | PLATON leaf | Internal ratio | Leaf ratio |
-| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| Arizona | 128 | 27,831 | 507,216 | 20,328 | 501,118 | 1.3691 | 1.0122 |
-| Arizona | 256 | 20,304 | 268,649 | 15,372 | 263,365 | 1.3208 | 1.0201 |
-| Arizona | 512 | 14,647 | 147,379 | 13,340 | 141,469 | 1.0980 | 1.0418 |
-| Crimes | 128 | 23,774 | 271,770 | 20,385 | 269,644 | 1.1662 | 1.0079 |
-| Crimes | 256 | 15,785 | 140,125 | 12,600 | 139,062 | 1.2528 | 1.0076 |
-| Crimes | 512 | 13,545 | 73,425 | 12,140 | 73,343 | 1.1157 | 1.0011 |
-| Twitter | 128 | 87,610 | 4,215,725 | 66,143 | 4,162,745 | 1.3246 | 1.0127 |
-| Twitter | 256 | 36,827 | 2,149,485 | 28,334 | 2,119,180 | 1.2997 | 1.0143 |
-| Twitter | 512 | 22,576 | 1,106,051 | 17,898 | 1,087,390 | 1.2614 | 1.0172 |
-
-## 6. Paired query outcomes vs. PLATON (Section 7.5, Figure 5)
+## 5. Paired query outcomes vs. PLATON (Section 7.5, Figure 5)
 
 | Dataset | B | WAHARP fewer | Tie | WAHARP more | Mismatches |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -117,7 +101,7 @@ Internal (index) and leaf node visits summed over the 6,000 final queries, extra
 | Twitter | 256 | 13.95% | 20.43% | 65.62% | 0 |
 | Twitter | 512 | 16.60% | 25.20% | 58.20% | 0 |
 
-## 7. Comparison with the previous checkpoint (Section 7.6)
+## 6. Comparison with the previous checkpoint (Section 7.6)
 
 Selected 0.75/0.25 checkpoint vs. the earlier 0.60/0.40 checkpoint on the same locked queries. Hyperparameters were fixed before the locked test, so the selected checkpoint was retained regardless of these outcomes.
 
@@ -135,23 +119,23 @@ Selected 0.75/0.25 checkpoint vs. the earlier 0.60/0.40 checkpoint on the same l
 
 Cell geometric mean 0.993663; pooled ratio 1.005450.
 
-## 8. Neural action usage (Section 7.8, Figure 6)
+## 7. Neural action usage (Section 7.8, Figure 6)
 
-Share of recorded split decisions at object and parent levels. Action id a maps to angle index j = a // 5 (j * 11.25 degrees) and page fraction index k = a mod 5. Full 16-angle and 5-fraction shares are in `paper_figures/fig6_action_usage.csv`.
+Share of recorded split decisions at object and parent levels. Action id a maps to angle index j = a // 5 (j * 11.25 degrees) and page fraction index k = a mod 5. Decision counts for all 16 angles and 5 fractions are in `paper_figures/fig6_action_usage.csv`.
 
 | Setting | Axis-aligned (0/90 deg) | Other angles | f=0.25 | f=0.375 | f=0.5 | f=0.625 | f=0.75 |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| AZ 128 | 96.54% | 3.46% | 84.06% | 2.97% | 4.47% | 2.54% | 5.96% |
-| AZ 256 | 94.84% | 5.16% | 80.40% | 2.86% | 6.24% | 3.31% | 7.19% |
-| AZ 512 | 92.18% | 7.82% | 72.00% | 3.81% | 8.80% | 4.33% | 11.07% |
-| CR 128 | 92.17% | 7.83% | 82.24% | 8.06% | 3.03% | 2.02% | 4.65% |
-| CR 256 | 92.67% | 7.33% | 79.62% | 8.35% | 3.93% | 2.69% | 5.41% |
-| CR 512 | 93.88% | 6.12% | 78.62% | 7.72% | 4.54% | 3.09% | 6.03% |
-| TW 128 | 96.75% | 3.25% | 82.22% | 6.62% | 2.48% | 2.62% | 6.05% |
-| TW 256 | 96.58% | 3.42% | 78.46% | 7.09% | 3.16% | 3.37% | 7.91% |
-| TW 512 | 96.04% | 3.96% | 74.25% | 6.78% | 4.56% | 4.51% | 9.91% |
+| AZ 128 | 96.54% | 3.46% | 84.1% | 3.0% | 4.5% | 2.5% | 6.0% |
+| AZ 256 | 94.84% | 5.16% | 80.4% | 2.9% | 6.2% | 3.3% | 7.2% |
+| AZ 512 | 92.18% | 7.82% | 72.0% | 3.8% | 8.8% | 4.3% | 11.1% |
+| CR 128 | 92.17% | 7.83% | 82.2% | 8.1% | 3.0% | 2.0% | 4.6% |
+| CR 256 | 92.67% | 7.33% | 79.6% | 8.3% | 3.9% | 2.7% | 5.4% |
+| CR 512 | 93.88% | 6.12% | 78.6% | 7.7% | 4.5% | 3.1% | 6.0% |
+| TW 128 | 96.75% | 3.25% | 82.2% | 6.6% | 2.5% | 2.6% | 6.1% |
+| TW 256 | 96.58% | 3.42% | 78.5% | 7.1% | 3.2% | 3.4% | 7.9% |
+| TW 512 | 96.04% | 3.96% | 74.2% | 6.8% | 4.6% | 4.5% | 9.9% |
 
-## 9. Tree structure (Section 7.9, Table 9)
+## 8. Tree structure (Section 7.9, Table 9)
 
 | Dataset | B | Height | Leaves | Internal | Decisions | Distinct actions | Mean fill | Sibling overlap burden |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
@@ -165,7 +149,7 @@ Share of recorded split decisions at object and parent levels. Action id a maps 
 | Twitter | 256 | 3 | 55,713 | 219 | 55,929 | 45 | 0.999990 | 0.013659 |
 | Twitter | 512 | 3 | 27,857 | 56 | 27,910 | 44 | 0.999928 | 0.024771 |
 
-## 10. Leave-one-dataset-out transfer (Section 7.10, Table 10)
+## 9. Leave-one-dataset-out transfer (Section 7.10, Table 10)
 
 | Comparison | Cell geometric mean | Pooled | Cells below 1 |
 | --- | ---: | ---: | ---: |

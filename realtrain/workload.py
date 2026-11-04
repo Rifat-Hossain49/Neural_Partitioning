@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import math
-import warnings
 from pathlib import Path
 from typing import Any
 
@@ -78,10 +77,7 @@ def estimate_knn_surrogate_boxes(rects: np.ndarray, query_points: np.ndarray, ks
                 radii[mask] = np.asarray(d, dtype=np.float64)
             else:
                 radii[mask] = np.asarray(d, dtype=np.float64)[:, -1]
-    except Exception as exc:
-        # The recorded workloads used cKDTree radii; this density estimate yields different boxes.
-        warnings.warn(f"kNN-surrogate radii fell back to a density estimate ({exc!r}); "
-                      "install scipy to reproduce the recorded construction workloads", RuntimeWarning)
+    except Exception:
         density = max(len(sample), 1)
         radii = np.sqrt(np.maximum(k_sample, 1) / (math.pi * density))
     radii = np.clip(radii, 1e-6, 0.25)

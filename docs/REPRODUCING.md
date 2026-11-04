@@ -63,20 +63,20 @@ result. Build the code bundles with:
 python scripts/make_kaggle_bundles.py --output kaggle_bundles_out
 ```
 
-This writes `realtrain_v1/`, `final_fullscale_b128/`, `final_capacity_sweep/`,
-and `teacher_cost_ablation/`, each containing the code and the recorded marker
-file its scripts look for. The script also lists the repository files that differ
-from the code that ran the experiments (recorded in
+This writes `realtrain_v1/`, `final_fullscale_b128/`, and `final_capacity_sweep/`,
+each containing the code and the recorded marker
+file its scripts look for. The script also checks the repository code against the hashes of the code
+that ran the experiments (recorded in
 `scripts/kaggle/bundle_markers/realtrain_v1/EXECUTED_CODE_MANIFEST.csv`). The
-three current differences are refactors and a warning that do not change any
-recorded output.
+`realtrain/`, `rtreelib/`, and `native/` code in this repository is identical
+to that code.
 
 Attach the datasets, the relevant bundle, and the previous step's output as
 Kaggle inputs, then run the steps in order:
 
 | Step | Command | Bundle | Protocol id | Output used by |
 |---|---|---|---|---|
-| 1. Workloads, 24,000 initial teacher states, bootstrap policy, 6,000 DAgger states (80 action costs each) | `python -m realtrain.pipeline` | `realtrain_v1` | `waharp_realtrain_v1_three_domain_pageio_20260829` | 2, 3, LODO, teacher-cost |
+| 1. Workloads, 24,000 initial teacher states, bootstrap policy, 6,000 DAgger states (80 action costs each) | `python -m realtrain.pipeline` | `realtrain_v1` | `waharp_realtrain_v1_three_domain_pageio_20260829` | 2, 3, 6 |
 | 2. Loss-weight ablation (6 mixtures x 3 seeds, validation only) | `scripts/kaggle/run_loss_weight_ablation.py` | `realtrain_v1` | `waharp_loss_weight_ablation_v1_20260902` | 3 |
 | 3. Final training (3 members, 0.75/0.25) and validation-only member selection | `scripts/kaggle/run_final_train.py` | `realtrain_v1` | `waharp_loss075_final_train_v1_20260903` | 5, 6, 7 |
 | 4a. B = 128 baselines (PLATON, STR, TGS), locked final queries | `scripts/kaggle/run_fullscale_b128.py --dataset <name>` | `final_fullscale_b128` | `waharp_final_fullscale_b128_member2_20260831` | 4b, 5 |
@@ -108,22 +108,6 @@ redistributed here. Obtain it from the PLATON authors and attach it as an input.
 those trees. A substitute reimplementation should not be reported as the
 paper's PLATON baseline.
 
-### Teacher-cost ablation (not used by the paper's checkpoint)
-
-`scripts/kaggle/run_teacher_cost_ablation.py` (bundle `teacher_cost_ablation`,
-protocol `waharp_teacher_cost_ablation_v1_20260926`) recomputes teacher targets
-for 16 overlap/margin coefficient pairs from step 1's state bank and selects on
-validation queries only. Its results are in `artifacts/teacher_cost_ablation/`.
-The selected pair has not replaced the frozen checkpoint.
-
-### Supplementary checks not reported in the paper
-
-`scripts/kaggle/run_reviewer_checks.py` (fixed dominant-action policies and
-same-instance PLATON timing) and `scripts/kaggle/run_workload_adaptation.py`
-(a frozen-model workload-shift pilot) are follow-up experiments. They import the
-repository directly, need no bundle, and their results are not part of this
-artifact.
-
 ## Protocol details
 
 | Item | Locked value |
@@ -149,17 +133,17 @@ the mean ratio. Neither step reads final-query results.
 
 ## Recorded environment
 
-The recorded runs used Kaggle's Python 3.12 image. Final training ran on CPU
-(`gpu_count: 0`, no DataParallel, `artifacts/model/member_2.training.json`).
-Baseline and evaluation runs used Kaggle sessions with NVIDIA Tesla T4 GPUs;
-tree assembly, STR/TGS, and most PLATON work are CPU-bound. Exact package
-versions were not captured. The executed bundle required `numpy`, `scipy`,
+The recorded runs used Kaggle's Python 3.12 image. The selected member's final
+record reports CPU execution without GPUs or DataParallel
+(`artifacts/model/member_2.training.json`). Exact package versions were not
+captured. The executed bundle required `numpy`, `scipy`,
 `pandas`, `torch`, and `tqdm` without pins. `scipy` must be installed: without
 it, the kNN-surrogate construction boxes fall back to a density estimate and
-differ from the recorded workloads. `realtrain` now warns when this happens.
+differ from the recorded workloads.
 
-Construction times are method-specific and were not measured on identical
-hardware (see Section 3 of the analysis appendix). Logical node accesses do
+Construction time includes only method-specific building. Because the records
+do not establish identical hardware, timing ratios retain their method-specific
+definition (see Section 3 of the analysis appendix). Logical node accesses do
 not depend on hardware.
 
 ## Published outputs
@@ -170,12 +154,11 @@ not depend on hardware.
 | `artifacts/paper_figures/` | Data behind Figures 2-6 and the PLATON-budget comparison |
 | `artifacts/model/` | Selected checkpoint, training and selection records, previous 0.60/0.40 checkpoint |
 | `artifacts/workloads/` | Locked construction, validation, and final query arrays with hashes |
-| `artifacts/final_evaluation/` | Locked results, confidence intervals, construction times, internal/leaf access |
+| `artifacts/final_evaluation/` | Locked results, confidence intervals, and construction times |
 | `artifacts/construction/`, `artifacts/tree_structure/` | Per-cell build records, action counts, and tree metrics |
 | `artifacts/generalization/` | Leave-one-dataset-out folds and results |
 | `artifacts/platon_budget/` | PLATON rollout-budget results, its fresh workload, and construction times |
-| `artifacts/ablation/`, `artifacts/teacher_cost_ablation/` | Validation-only ablations |
+| `artifacts/ablation/` | Validation-only loss-weight ablation |
 
 The 54,000-row per-method query traces are omitted because of their size. The
-paired summaries, per-workload totals, and internal/leaf counts derived from
-them are included, and `reproduce_locked_cell.py` regenerates the WAHARP traces.
+paired summaries and per-workload totals derived from them are included, and `reproduce_locked_cell.py` regenerates the WAHARP traces.

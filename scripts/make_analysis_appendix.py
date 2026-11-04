@@ -129,8 +129,8 @@ def build() -> dict[Path, str]:
     md.append("## 3. Construction time (Section 7.3, Figure 3)\n")
     md.append("Seconds of method-specific construction only: WAHARP = policy inference plus Python tree "
               "assembly; PLATON = summed MCTS decision time plus native bulk loading. Dataset loading, final "
-              "queries, and idle resumable-run time are excluded. Runs were not on identical hardware, so "
-              "ratios keep this method-specific definition.\n")
+              "queries, and idle resumable-run time are excluded. Because the records do not establish "
+              "identical hardware, timing ratios retain their method-specific definition.\n")
     md.append(md_table(["Dataset", "B", "WAHARP", "STR", "TGS", "PLATON MCTS", "PLATON native", "PLATON total",
                         "MCTS decisions", "MCTS share", "PLATON/WAHARP"], rows) + "\n")
     md.append(f"PLATON/WAHARP: {min(speed):.2f}-{max(speed):.2f}x (arithmetic mean {sum(speed) / len(speed):.2f}x). "
@@ -155,45 +155,27 @@ def build() -> dict[Path, str]:
     md.append(md_table(["Dataset", "Rollouts", "WAHARP acc.", "PLATON acc.", "WAHARP/PLATON", "WAHARP s",
                         "PLATON s", "PLATON/WAHARP time"], rows) + "\n")
 
-    # Figure 4: query families, and Section 7.6: internal vs. leaf access.
-    il = read(ART / "final_evaluation" / "INTERNAL_LEAF_ACCESS.csv")
-    fam = defaultdict(dict)
-    for r in il:
-        fam[(r["dataset"], int(r["capacity"]), r["query_family"])][r["method"]] = r
+    # Figure 4: query families.
+    fam = defaultdict(lambda: [0, 0])
+    for r in read(ART / "final_evaluation" / "ALL_PAIRWISE_BY_WORKLOAD.csv"):
+        if r["right_method"] == "PLATON":
+            tot = fam[(r["dataset"], int(r["capacity"]), r["query_type"])]
+            tot[0] += int(r["left_total_access"])
+            tot[1] += int(r["right_total_access"])
     fig4, rows = [], []
     for ds in DATASETS:
         for qt in ("range", "point", "knn"):
             line = [name(ds), qt]
             for b in CAPACITIES:
-                w, p = fam[(ds, b, qt)]["WAHARP"], fam[(ds, b, qt)]["PLATON"]
-                ratio = int(w["total_node_accesses"]) / int(p["total_node_accesses"])
-                fig4.append({"dataset": ds, "capacity": b, "query_family": qt, "waharp_over_platon": round(ratio, 6)})
-                line.append(f"{ratio:.4f}")
+                w, p = fam[(ds, b, qt)]
+                fig4.append({"dataset": ds, "capacity": b, "query_family": qt, "waharp_accesses": w,
+                             "platon_accesses": p, "waharp_over_platon": round(w / p, 6)})
+                line.append(f"{w / p:.4f}")
             rows.append(line)
     outputs[FIG / "fig4_query_family_ratios.csv"] = csv_text(fig4)
     md.append("## 4. Query families (Section 7.4, Figure 4)\n")
     md.append("WAHARP/PLATON access ratio by query family (range 4,200, point 300, kNN 1,500 queries per cell).\n")
     md.append(md_table(["Dataset", "Family", "B=128", "B=256", "B=512"], rows) + "\n")
-
-    rows = []
-    for ds in DATASETS:
-        for b in CAPACITIES:
-            tot = {m: [0, 0] for m in ("WAHARP", "PLATON", "STR", "TGS")}
-            for qt in ("range", "point", "knn"):
-                for m in tot:
-                    r = fam[(ds, b, qt)][m]
-                    tot[m][0] += int(r["internal_node_accesses"])
-                    tot[m][1] += int(r["leaf_node_accesses"])
-            w, p = tot["WAHARP"], tot["PLATON"]
-            rows.append([name(ds), b, f"{w[0]:,}", f"{w[1]:,}", f"{p[0]:,}", f"{p[1]:,}",
-                         f"{w[0] / p[0]:.4f}", f"{w[1] / p[1]:.4f}"])
-    md.append("## 5. Internal and leaf access (Section 7.6)\n")
-    md.append("Internal (index) and leaf node visits summed over the 6,000 final queries, extracted from the "
-              "locked per-query traces; internal + leaf equals the totals in Section 1 for every method and "
-              "cell. Per-family and STR/TGS counts are in `final_evaluation/INTERNAL_LEAF_ACCESS.csv`. "
-              "WAHARP and STR/TGS use the Python traversal; PLATON uses its native C++ traversal.\n")
-    md.append(md_table(["Dataset", "B", "WAHARP internal", "WAHARP leaf", "PLATON internal", "PLATON leaf",
-                        "Internal ratio", "Leaf ratio"], rows) + "\n")
 
     # Figure 5: paired outcomes.
     fig5, rows = [], []
@@ -205,7 +187,7 @@ def build() -> dict[Path, str]:
                          "waharp_more_pct": round(loss, 2)})
             rows.append([name(ds), b, f"{win:.2f}%", f"{tie:.2f}%", f"{loss:.2f}%", r["correctness_mismatches"]])
     outputs[FIG / "fig5_paired_outcomes.csv"] = csv_text(fig5)
-    md.append("## 6. Paired query outcomes vs. PLATON (Section 7.5, Figure 5)\n")
+    md.append("## 5. Paired query outcomes vs. PLATON (Section 7.5, Figure 5)\n")
     md.append(md_table(["Dataset", "B", "WAHARP fewer", "Tie", "WAHARP more", "Mismatches"], rows) + "\n")
 
     # Comparison with previous checkpoint.
@@ -219,7 +201,7 @@ def build() -> dict[Path, str]:
     old = [float(cell[(ds, b, "OldNeural_060_040")]["ratio_left_over_right"]) for ds in DATASETS for b in CAPACITIES]
     pooled = (sum(int(cell[(ds, b, "OldNeural_060_040")]["left_total_access"]) for ds in DATASETS for b in CAPACITIES)
               / sum(int(cell[(ds, b, "OldNeural_060_040")]["right_total_access"]) for ds in DATASETS for b in CAPACITIES))
-    md.append("## 7. Comparison with the previous checkpoint (Section 7.6)\n")
+    md.append("## 6. Comparison with the previous checkpoint (Section 7.6)\n")
     md.append("Selected 0.75/0.25 checkpoint vs. the earlier 0.60/0.40 checkpoint on the same locked queries. "
               "Hyperparameters were fixed before the locked test, so the selected checkpoint was retained "
               "regardless of these outcomes.\n")
@@ -227,7 +209,7 @@ def build() -> dict[Path, str]:
     md.append(f"Cell geometric mean {geomean(old):.6f}; pooled ratio {pooled:.6f}.\n")
 
     # Figure 6: action usage, and Table 9: tree structure.
-    fig6, rows_ang, rows_frac, rows_tree = [], [], [], []
+    fig6, rows_ang, rows_tree = [], [], []
     for ds in DATASETS:
         builds = {int(c["capacity"]): c for c in json.loads((ART / "construction" / f"{ds}_CONSTRUCTION_ALL.json").read_text())}
         for b in CAPACITIES:
@@ -239,30 +221,30 @@ def build() -> dict[Path, str]:
                 ang[a // 5] += n
                 frac[a % 5] += n
             row = {"dataset": ds, "capacity": b, "decisions": total}
-            row.update({f"angle_{ANGLES[j]}_pct": round(100 * ang[j] / total, 2) for j in range(16)})
-            row.update({f"fraction_{FRACTIONS[k]}_pct": round(100 * frac[k] / total, 2) for k in range(5)})
+            row.update({f"angle_{ANGLES[j]}_count": ang[j] for j in range(16)})
+            row.update({f"fraction_{FRACTIONS[k]}_count": frac[k] for k in range(5)})
             fig6.append(row)
             axis = 100 * (ang[0] + ang[8]) / total
-            rows_ang.append([{"arizona": "AZ", "crimes": "CR", "twitter": "TW"}[ds] + f" {b}",f"{axis:.2f}%", f"{100 - axis:.2f}%"]
-                            + [f"{100 * frac[k] / total:.2f}%" for k in range(5)])
+            rows_ang.append([{"arizona": "AZ", "crimes": "CR", "twitter": "TW"}[ds] + f" {b}", f"{axis:.2f}%", f"{100 - axis:.2f}%"]
+                            + [f"{100 * frac[k] / total:.1f}%" for k in range(5)])
             s = json.loads((ART / "tree_structure" / f"{ds}_B{b}_TREE_STRUCTURE.json").read_text())
             rows_tree.append([name(ds), b, s["height"], f"{s['leaf_nodes']:,}", f"{s['internal_nodes']:,}",
                               f"{builds[b]['neural_decision_count']:,}", len(counts), f"{s['mean_fill']:.6f}",
                               f"{s['mean_sibling_overlap']:.6f}"])
     outputs[FIG / "fig6_action_usage.csv"] = csv_text(fig6)
-    md.append("## 8. Neural action usage (Section 7.8, Figure 6)\n")
+    md.append("## 7. Neural action usage (Section 7.8, Figure 6)\n")
     md.append("Share of recorded split decisions at object and parent levels. Action id a maps to angle "
-              "index j = a // 5 (j * 11.25 degrees) and page fraction index k = a mod 5. Full 16-angle and "
-              "5-fraction shares are in `paper_figures/fig6_action_usage.csv`.\n")
+              "index j = a // 5 (j * 11.25 degrees) and page fraction index k = a mod 5. Decision counts for "
+              "all 16 angles and 5 fractions are in `paper_figures/fig6_action_usage.csv`.\n")
     md.append(md_table(["Setting", "Axis-aligned (0/90 deg)", "Other angles"] + [f"f={f}" for f in FRACTIONS], rows_ang) + "\n")
-    md.append("## 9. Tree structure (Section 7.9, Table 9)\n")
+    md.append("## 8. Tree structure (Section 7.9, Table 9)\n")
     md.append(md_table(["Dataset", "B", "Height", "Leaves", "Internal", "Decisions", "Distinct actions", "Mean fill",
                         "Sibling overlap burden"], rows_tree) + "\n")
 
     # Table 10: LODO.
     lodo = read(ART / "generalization" / "LODO_RESULTS.csv")
     by_family = read(ART / "generalization" / "LODO_BY_QUERY_FAMILY.csv")
-    md.append("## 10. Leave-one-dataset-out transfer (Section 7.10, Table 10)\n")
+    md.append("## 9. Leave-one-dataset-out transfer (Section 7.10, Table 10)\n")
     rows = []
     for ref in ("PLATON", "WAHARP_ALL_DOMAIN", "STR", "TGS"):
         sel = [r for r in lodo if r["right_method"] == ref and r["query_family"] == "all"]
