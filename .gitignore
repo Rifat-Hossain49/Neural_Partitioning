@@ -18,3 +18,4 @@ outputs/
 checkpoints/
 custom_benchmark_output/
 !artifacts/model/selected.pt
+kaggle_bundles_out/

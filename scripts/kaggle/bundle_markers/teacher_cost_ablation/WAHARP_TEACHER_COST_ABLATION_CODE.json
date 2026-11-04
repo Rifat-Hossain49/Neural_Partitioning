@@ -1,0 +1,5 @@
+{
+  "protocol_id": "waharp_teacher_cost_ablation_code_v1_20260926",
+  "purpose": "Validation-only paired ablation of WAHARP teacher overlap and margin coefficients.",
+  "paper_results_are_inputs": false
+}

@@ -85,12 +85,30 @@ def main() -> None:
         assert fold["teacher_states"] == 20_000
     assert len(list((ARTIFACTS / "construction").glob("*_CONSTRUCTION_ALL.json"))) == 3
     assert len(list((ARTIFACTS / "tree_structure").glob("*_TREE_STRUCTURE.json"))) == 9
+    assert row_count(ARTIFACTS / "final_evaluation" / "CONSTRUCTION_TIMES.csv") == 9
+    assert row_count(ARTIFACTS / "final_evaluation" / "INTERNAL_LEAF_ACCESS.csv") == 108
+
+    workload_hashes = read_json(ARTIFACTS / "workloads" / "WORKLOAD_HASHES.json")
+    for dataset in ("arizona", "crimes", "twitter"):
+        files = workload_hashes[dataset]
+        assert sum(name.startswith("final_") for name in files) == 16
+        for name, digest in files.items():
+            assert sha256(ARTIFACTS / "workloads" / dataset / name) == digest, (dataset, name)
+
+    budget = read_json(ARTIFACTS / "platon_budget" / "EXPERIMENT_STATE.json")
+    assert budget["status"] == "COMPLETE"
+    assert budget["correctness_mismatches"] == 0
+    assert budget["waharp_retrained"] is False
+    assert budget["rollouts"] == [1, 5, 10, 25]
+    assert row_count(ARTIFACTS / "platon_budget" / "RESULTS.csv") == 12
 
     print("Artifact verification passed")
     print("  selected loss weights: 0.75 listwise / 0.25 classification")
     print("  selected member: 2")
     print("  locked evaluation: 9 cells x 6,000 queries, 0 mismatches")
     print("  zero-shot LODO: 3 frozen folds, 9 cells x 6,000 queries, 0 mismatches")
+    print("  locked workloads: 3 datasets, hashes match")
+    print("  PLATON budget: rollouts 1/5/10/25 at B=128, 0 mismatches")
     print("  teacher-cost sweep: 16 validation-only configurations, source reproduction passed")
 
 

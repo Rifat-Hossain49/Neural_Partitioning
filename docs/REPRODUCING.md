@@ -1,91 +1,145 @@
-# Reproducing the WAHARP artifact
+# Reproducing the WAHARP paper
 
-## 1. Verify the compact release
+There are three levels of reproduction, from minutes on a laptop to the full
+multi-day Kaggle protocol.
 
-From the repository root:
+| Level | What it shows | Needs | Time |
+|---|---|---|---|
+| 1. Verify the artifact | Checkpoint, records, tables, and figure data are consistent | This repository | ~1 minute |
+| 2. Reproduce locked cells | The frozen checkpoint rebuilds the paper's trees and node-access counts exactly | One raw dataset | ~2 minutes per Arizona cell on a CPU |
+| 3. Rerun the protocol | Teacher labels, training, selection, baselines, and evaluation from scratch | All datasets, PLATON author code, Kaggle-scale compute | Days |
+
+## 1. Verify the artifact
 
 ```bash
 python -m pip install -r requirements.txt
 python scripts/verify_artifacts.py
+python scripts/make_analysis_appendix.py --check
 python scripts/smoke_test.py
 python -m unittest discover -s tests -v
 ```
 
-This verifies the frozen checkpoint, protocol records, result-table shape,
-action space, feature dimension, exact page quotas, and tree capacity.
+`verify_artifacts.py` checks the checkpoint hash, protocol records, result-table
+shapes, workload hashes, and correctness gates. `make_analysis_appendix.py --check`
+confirms that [`artifacts/WAHARP_ANALYSIS_APPENDIX.md`](../artifacts/WAHARP_ANALYSIS_APPENDIX.md)
+and the figure data in `artifacts/paper_figures/` match the committed records.
 
-## 2. Historical experiment entry points
+## 2. Reproduce locked-evaluation cells
 
-The scripts under `scripts/kaggle/` are the entry points used by the recorded
-experiments. They preserve their original `/kaggle/input` discovery and strict
-protocol checks:
-
-```text
-run_loss_weight_ablation.py  Six loss mixtures, three paired seeds
-run_teacher_cost_ablation.py Sixteen overlap/margin pairs, three paired seeds
-run_final_train.py           Three final members with 0.75/0.25 weights
-run_locked_eval.py           Nine locked dataset-capacity cells
-run_fullscale.py             Capacity-sweep baseline materialization
-run_platon_budget_b128.py    Frozen WAHARP vs. PLATON rollouts 1/5/10/25
-```
-
-Run them in this order:
-
-1. Materialize the 30,000 teacher states: 10,000 from each of Twitter, Crimes,
-   and Arizona, with 80 action targets per state.
-2. Attach that teacher-state bundle and run `run_loss_weight_ablation.py`.
-3. Attach the completed ablation output and run `run_final_train.py`.
-4. Attach the three datasets, frozen final-training output, fixed workload
-   manifests, and baseline per-query outputs; then run `run_locked_eval.py`.
-5. Aggregate the resulting dataset outputs with
-   `scripts/aggregate_waharp_loss075_locked_eval.py`.
-
-The scripts reject missing, ambiguous, or protocol-incompatible inputs. This
-is deliberate: a partial run must not be mistaken for the locked experiment.
-
-The supplemental PLATON-budget experiment is independent of model selection.
-`run_platon_budget_b128.py` uses the frozen selected checkpoint at capacity
-128, keeps PLATON at 100 simulation steps, and evaluates rollouts 1, 5, 10,
-and 25 on one shared fresh 6,000-query workload per dataset. It checkpoints
-each newly generated PLATON action and reuses the recorded rollout-25 cut list
-only after protocol, normalized-data, and construction-query hash checks pass.
-
-The teacher-cost sweep recomputes targets from separately stored page-hit,
-overlap, and margin components on one fixed state/action bank. It selects using
-validation node accesses and does not read final queries or PLATON results. Its
-selected non-historical pair must pass fresh DAgger training and locked final
-evaluation before replacing the released checkpoint.
-
-## Custom datasets
-
-For an exploratory comparison on a separate 2D point or rectangle dataset,
-use `notebooks/build_and_compare_custom_dataset.ipynb` or:
+The locked construction workload (2,800 boxes) and the 6,000 final queries for
+every dataset are committed under `artifacts/workloads/<dataset>/`. The same
+arrays are used at all three capacities. With one raw dataset (see
+[`DATASETS.md`](DATASETS.md)):
 
 ```bash
-python scripts/custom_dataset_benchmark.py \
-  --data /path/to/data.npy \
-  --capacity 128 \
-  --methods WAHARP,STR,TGS
+python scripts/reproduce_locked_cell.py --dataset arizona --capacity 512 \
+    --data /path/to/arizona_buildings_n1464257_epsg26912.npy
 ```
 
-This generates a deterministic workload shared by all methods and validates
-range, point, and kNN answers. It is a transfer evaluation of the frozen model,
-not an exact reproduction of the paper's fixed workloads.
+The script refuses to run if the normalized dataset hash differs from the
+evaluated snapshot. It then builds the WAHARP tree with
+`artifacts/model/selected.pt`, evaluates all 6,000 final queries, and compares
+with the recorded artifact:
 
-## 3. Protocol details
+- total and per-workload logical node accesses;
+- neural decision count and the full action-usage histogram;
+- leaf-page count and tree structure (height, fill, sibling overlap).
+
+All three Arizona cells (B = 128, 256, 512) reproduce exactly on CPU, on
+Windows with Python 3.14 and PyTorch 2.13. Crimes and Twitter use the same
+code path but take longer to build (Table 9 decision counts). The WAHARP side
+of every cell can be reproduced this way. The PLATON side needs the authors'
+code (Section 3).
+
+## 3. Rerun the full protocol
+
+The scripts in `scripts/kaggle/` are the entry points that produced the
+recorded results. Each one searches `/kaggle/input` for a code bundle and
+for the outputs of earlier steps, and it refuses missing, ambiguous, or
+protocol-incompatible inputs, so a partial run cannot be mistaken for a locked
+result. Build the code bundles with:
+
+```bash
+python scripts/make_kaggle_bundles.py --output kaggle_bundles_out
+```
+
+This writes `realtrain_v1/`, `final_fullscale_b128/`, `final_capacity_sweep/`,
+and `teacher_cost_ablation/`, each containing the code and the recorded marker
+file its scripts look for. The script also lists the repository files that differ
+from the code that ran the experiments (recorded in
+`scripts/kaggle/bundle_markers/realtrain_v1/EXECUTED_CODE_MANIFEST.csv`). The
+three current differences are refactors and a warning that do not change any
+recorded output.
+
+Attach the datasets, the relevant bundle, and the previous step's output as
+Kaggle inputs, then run the steps in order:
+
+| Step | Command | Bundle | Protocol id | Output used by |
+|---|---|---|---|---|
+| 1. Workloads, 24,000 initial teacher states, bootstrap policy, 6,000 DAgger states (80 action costs each) | `python -m realtrain.pipeline` | `realtrain_v1` | `waharp_realtrain_v1_three_domain_pageio_20260829` | 2, 3, LODO, teacher-cost |
+| 2. Loss-weight ablation (6 mixtures x 3 seeds, validation only) | `scripts/kaggle/run_loss_weight_ablation.py` | `realtrain_v1` | `waharp_loss_weight_ablation_v1_20260902` | 3 |
+| 3. Final training (3 members, 0.75/0.25) and validation-only member selection | `scripts/kaggle/run_final_train.py` | `realtrain_v1` | `waharp_loss075_final_train_v1_20260903` | 5, 6, 7 |
+| 4a. B = 128 baselines (PLATON, STR, TGS), locked final queries | `scripts/kaggle/run_fullscale_b128.py --dataset <name>` | `final_fullscale_b128` | `waharp_final_fullscale_b128_member2_20260831` | 4b, 5 |
+| 4b. B = 256/512 baselines on the same queries | `scripts/kaggle/run_fullscale.py --dataset <name> --capacity <256\|512>` | `final_capacity_sweep` | `waharp_final_capacity_sweep_member2_v1_20260901` | 5 |
+| 5. Locked evaluation of the selected checkpoint (9 cells) | `scripts/kaggle/run_locked_eval.py --dataset <name>` | `final_capacity_sweep` | `waharp_loss075_locked_eval_v1_20260903` | paper Sections 7.2-7.9 |
+| 6. Leave-one-dataset-out transfer | `scripts/kaggle/run_lodo_zero_shot.py` | `final_capacity_sweep` | `waharp_lodo_zero_shot_v1_20260919` | paper Section 7.10 |
+| 7. PLATON search-budget sensitivity (rollouts 1/5/10/25, B = 128) | `scripts/kaggle/run_platon_budget_b128.py` | `final_capacity_sweep` | `waharp_platon_budget_b128_v1_20260907` | paper Section 7.3 |
+
+Step 1 (`python -m realtrain.pipeline --input-root <inputs> --output-root <dir>`)
+runs the complete V1 pipeline with the recorded configuration (stored in
+`scripts/kaggle/bundle_markers/realtrain_v1/WAHARP_REALTRAIN_V1_PROTOCOL.json`).
+It also trains, selects, and evaluates the earlier 0.60/0.40 model. Steps 2
+and 3 only need its `teacher/initial_*.npz` and `teacher/dagger_*.npz` files.
+If the PLATON code is not available, pass `--config` with a JSON file that sets
+`run_platon`, `run_guttman_native`, and `run_rstar_native` to `false`. Those
+flags only affect step 1's own baseline evaluation, not the teacher states.
+Step 5's aggregation is
+`python scripts/aggregate_waharp_loss075_locked_eval.py --twitter <dir> --crimes <dir> --arizona <dir> --training <dir> --output <dir>`.
+The 0.60/0.40 checkpoint that
+steps 4a and 4b evaluate is committed at
+`artifacts/model/previous_060_040/member_2.pt`. `preflight_capacity_sweep.py`
+is an optional pre-run check of the capacity-sweep bundle (`--bundle <dir>`).
+
+Steps 4, 6, and 7 run the authors' PLATON code (`RtreeEnv`, `MCTS`, `Node`, and
+the bundled libspatialindex 1.9.3) with 100 simulation steps, nominal node
+capacity B/0.8 with fill factor 0.8, and 4,096-byte pages. That source is not
+redistributed here. Obtain it from the PLATON authors and attach it as an input.
+`native/` contains the additional native programs used to bulk-load and query
+those trees. A substitute reimplementation should not be reported as the
+paper's PLATON baseline.
+
+### Teacher-cost ablation (not used by the paper's checkpoint)
+
+`scripts/kaggle/run_teacher_cost_ablation.py` (bundle `teacher_cost_ablation`,
+protocol `waharp_teacher_cost_ablation_v1_20260926`) recomputes teacher targets
+for 16 overlap/margin coefficient pairs from step 1's state bank and selects on
+validation queries only. Its results are in `artifacts/teacher_cost_ablation/`.
+The selected pair has not replaced the frozen checkpoint.
+
+### Supplementary checks not reported in the paper
+
+`scripts/kaggle/run_reviewer_checks.py` (fixed dominant-action policies and
+same-instance PLATON timing) and `scripts/kaggle/run_workload_adaptation.py`
+(a frozen-model workload-shift pilot) are follow-up experiments. They import the
+repository directly, need no bundle, and their results are not part of this
+artifact.
+
+## Protocol details
 
 | Item | Locked value |
 |---|---:|
 | State feature dimension | 498 |
 | Candidate actions | 80 |
-| Teacher states | 30,000 |
+| Teacher states | 30,000 (24,000 initial + 6,000 DAgger) |
 | Action targets | 2,400,000 |
+| Teacher cost weights (overlap / margin) | 1e-4 / 2e-5 |
 | Loss mixtures tested | 6 |
 | Paired seeds per mixture | 3 |
 | Selected listwise/classification weights | 0.75 / 0.25 |
 | Final ensemble candidates | 3 |
 | Selected member | 2 |
-| Capacities | 128, 256, 512 |
+| Capacities | 128 (trained), 256, 512 |
+| Construction queries per dataset | 2,800 |
 | Final queries per dataset-capacity cell | 6,000 |
 
 The loss mixture minimizes the mean across paired seeds of
@@ -93,10 +147,35 @@ The loss mixture minimizes the mean across paired seeds of
 selection minimizes the worst-domain validation access ratio plus 0.25 times
 the mean ratio. Neither step reads final-query results.
 
-## 4. Published compact outputs
+## Recorded environment
 
-The release includes aggregate and cell-level result tables, construction
-records, and tree metrics. It omits the 54,000-row per-method query traces
-because they are large and redundant with the included paired summaries. The
-included `FINAL_STATE.json` records zero correctness mismatches and zero
-baseline rebuilds in the locked pass.
+The recorded runs used Kaggle's Python 3.12 image. Final training ran on CPU
+(`gpu_count: 0`, no DataParallel, `artifacts/model/member_2.training.json`).
+Baseline and evaluation runs used Kaggle sessions with NVIDIA Tesla T4 GPUs;
+tree assembly, STR/TGS, and most PLATON work are CPU-bound. Exact package
+versions were not captured. The executed bundle required `numpy`, `scipy`,
+`pandas`, `torch`, and `tqdm` without pins. `scipy` must be installed: without
+it, the kNN-surrogate construction boxes fall back to a density estimate and
+differ from the recorded workloads. `realtrain` now warns when this happens.
+
+Construction times are method-specific and were not measured on identical
+hardware (see Section 3 of the analysis appendix). Logical node accesses do
+not depend on hardware.
+
+## Published outputs
+
+| Location | Contents |
+|---|---|
+| `artifacts/WAHARP_ANALYSIS_APPENDIX.md` | Companion appendix cited by the paper: every reported table and figure value |
+| `artifacts/paper_figures/` | Data behind Figures 2-6 and the PLATON-budget comparison |
+| `artifacts/model/` | Selected checkpoint, training and selection records, previous 0.60/0.40 checkpoint |
+| `artifacts/workloads/` | Locked construction, validation, and final query arrays with hashes |
+| `artifacts/final_evaluation/` | Locked results, confidence intervals, construction times, internal/leaf access |
+| `artifacts/construction/`, `artifacts/tree_structure/` | Per-cell build records, action counts, and tree metrics |
+| `artifacts/generalization/` | Leave-one-dataset-out folds and results |
+| `artifacts/platon_budget/` | PLATON rollout-budget results, its fresh workload, and construction times |
+| `artifacts/ablation/`, `artifacts/teacher_cost_ablation/` | Validation-only ablations |
+
+The 54,000-row per-method query traces are omitted because of their size. The
+paired summaries, per-workload totals, and internal/leaf counts derived from
+them are included, and `reproduce_locked_cell.py` regenerates the WAHARP traces.

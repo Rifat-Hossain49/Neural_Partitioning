@@ -1,0 +1,14 @@
+{
+  "invalid_rows": 0,
+  "kind": "point",
+  "normalized_object_sha256": "1ba4e74bffee233024d3ba5c400b7008d3e47b2fb32101b477e5a322b47dc3ca",
+  "objects": 14262517,
+  "source": "/kaggle/input/datasets/rifathosain/twitter-dataset/twitter.csv",
+  "source_bounds": {
+    "x_max": -67.172316,
+    "x_min": -124.62823268,
+    "y_max": 49.33834794,
+    "y_min": 25.27794215
+  },
+  "source_rows_seen": 14262517
+}

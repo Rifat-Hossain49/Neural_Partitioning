@@ -1,0 +1,15 @@
+{
+  "capacity": 128,
+  "construction_seconds": 1585.1424697410207,
+  "cut_count": 11439,
+  "cut_sha256": "352ddfc18d092f637ca01b18b08ba2c17f169944fd08bc5ca85ca158d8e9cacd",
+  "dataset": "arizona",
+  "index_identifier": 1,
+  "mcts_rollouts": 25,
+  "mcts_seconds": 1572.8157589450207,
+  "mcts_simulation_steps": 100,
+  "method": "PLATON-25",
+  "native_build_seconds": 12.326710796000043,
+  "reused_mcts": true,
+  "valid_tree": true
+}

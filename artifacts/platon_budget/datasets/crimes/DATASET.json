@@ -1,0 +1,14 @@
+{
+  "invalid_rows": 86848,
+  "kind": "point",
+  "normalized_object_sha256": "e229e88e15541ed945211487216c013cd14eebd55178f05749071983b290cd4b",
+  "objects": 7697816,
+  "source": "/kaggle/input/datasets/utkarshx27/crimes-2001-to-present/Crimes_-_2001_to_Present.csv",
+  "source_bounds": {
+    "x_max": -87.524529378,
+    "x_min": -91.686565684,
+    "y_max": 42.022910333,
+    "y_min": 36.619446395
+  },
+  "source_rows_seen": 7784664
+}

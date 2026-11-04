@@ -1,0 +1,15 @@
+{
+  "invalid_rows": 0,
+  "kind": "rectangle",
+  "normalized_object_sha256": "58eb17e00bbed2a46790f0e373e85198cfc4d2bb92a2355afa5b8db8f83ac5c6",
+  "objects": 1464257,
+  "source": "/kaggle/input/datasets/shellshocker/waharp-robust-v2-arizona-b128-external-v1/data/arizona_cache/arizona_buildings_n1464257_epsg26912.npy",
+  "source_bounds": {
+    "x_max": 1.0,
+    "x_min": 0.0,
+    "y_max": 1.0,
+    "y_min": 0.0
+  },
+  "source_order": "xmin,xmax,ymin,ymax",
+  "source_rows": 1464257
+}

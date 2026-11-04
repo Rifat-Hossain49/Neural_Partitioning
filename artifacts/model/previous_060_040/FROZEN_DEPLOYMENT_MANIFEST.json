@@ -1,0 +1,24 @@
+{
+  "capacity": 128,
+  "checkpoint": "member_2.pt",
+  "checkpoint_sha256": "8709a7f9025292636f0526ccf7b702eda8ce0bce953c02cc1c05245bb13d7e1e",
+  "decision": "FROZEN_FOR_FULL_SCALE_EVALUATION",
+  "frozen_utc_date": "2026-08-31",
+  "model_family": "WAHARP real-training V1",
+  "selection_basis": "validation-only worst-domain ratio plus 0.25 mean ratio",
+  "selection_report_sha256": "e09aeb2e5509800802ddf2931856be76c4753bfedb53c4db9f428253be1100e9",
+  "audit_pairwise_sha256": "756d21f5b9ffb7f1d20d7f32f75080e683b26ebf79ab82222cbfb457d6f8070e",
+  "audit_query_role": "previously_consumed_development_diagnostic",
+  "audit_correctness_mismatches": 0,
+  "audit_queries": 18000,
+  "audit_ratio_neural_over_platon": 1.0417967072066592,
+  "fresh_final_namespace": "waharp_final_fullscale_b128_member2_93d3c2545e44b9e21269a1b4",
+  "fresh_final_namespace_commitment_sha256": "93d3c2545e44b9e21269a1b43a640f91d0a5de690dfe310d08a2c9864e2945eb",
+  "fresh_final_namespace_nonce": "3dbb85ed56464f3694440874465bae33",
+  "prohibitions": [
+    "No checkpoint or policy changes after this manifest",
+    "Do not use the prior development workload as untouched final evidence",
+    "Do not select a model using the new final workload",
+    "Do not attribute deterministic fallback gains to the neural model"
+  ]
+}

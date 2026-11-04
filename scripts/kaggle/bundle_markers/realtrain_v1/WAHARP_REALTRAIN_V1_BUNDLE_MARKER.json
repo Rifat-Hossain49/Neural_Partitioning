@@ -1,0 +1,20 @@
+{
+  "action_cost_labels": 2400000,
+  "action_count_per_state": 80,
+  "bundle_name": "waharp_realtrain_B128_v1",
+  "bundle_revision": 1,
+  "capacity": 128,
+  "code_fingerprint": "6cb1018bb2c849e76b7a8caa4a86c7c0e1eb7b08e19a9801bd53d899852ce388",
+  "final_queries_role": "evaluation_only",
+  "kaggle_hard_limit_hours": 12,
+  "platon_role": "evaluation_only",
+  "protocol_id": "waharp_realtrain_v1_three_domain_pageio_20260829",
+  "seed": 2026082951,
+  "target_accelerator": "2x NVIDIA T4",
+  "training_domains": [
+    "twitter",
+    "crimes",
+    "arizona"
+  ],
+  "training_state_count": 30000
+}
