@@ -49,7 +49,28 @@ class NeuralPolicy:
         return action_id, queries, feat
 
 
-def neural_partition_groups(entries: np.ndarray, policy: NeuralPolicy, level: int,
+class SimplePolicy:
+    def __init__(self, name: str, capacity: int):
+        if name not in ("Fixed-X-Quarter", "Widest-Axis-Quarter"):
+            raise ValueError(f"Unknown simple policy: {name}")
+        self.name = name
+        self.capacity = capacity
+        self.decisions = 0
+        self.action_counts = collections.Counter()
+
+    def choose(self, entries: np.ndarray, level: int, query_cap: int = 96):
+        action_id = 0
+        if self.name == "Widest-Axis-Quarter":
+            centers = (entries[:, :2] + entries[:, 2:]) * 0.5
+            span = np.ptp(centers, axis=0)
+            if span[1] > span[0]:
+                action_id = 40
+        self.decisions += 1
+        self.action_counts[action_id] += 1
+        return action_id, np.empty((0, 4), dtype=np.float32), np.empty(0, dtype=np.float32)
+
+
+def neural_partition_groups(entries: np.ndarray, policy: NeuralPolicy | SimplePolicy, level: int,
                             capture: Callable[[np.ndarray, np.ndarray, int], None] | None = None,
                             query_cap: int = 96) -> list[np.ndarray]:
     r = np.asarray(entries, dtype=np.float32)
@@ -104,9 +125,19 @@ def build_neural_tree(rects: np.ndarray, construction_queries: np.ndarray, model
                       capacity: int, hist_bins: int, query_cap: int = 96,
                       capture: Callable[[np.ndarray, np.ndarray, int], None] | None = None) -> tuple[RTreeGuttman, dict[str, Any]]:
     started=time.perf_counter()
+    policy=NeuralPolicy(model,device,capacity,hist_bins,construction_queries)
+    return build_policy_tree(rects, policy, query_cap, capture, started=started)
+
+
+def build_policy_tree(rects: np.ndarray, policy: NeuralPolicy | SimplePolicy,
+                      query_cap: int = 96,
+                      capture: Callable[[np.ndarray, np.ndarray, int], None] | None = None,
+                      *, started: float | None = None) -> tuple[RTreeGuttman, dict[str, Any]]:
+    if started is None:
+        started=time.perf_counter()
+    capacity=policy.capacity
     r=np.asarray(rects,dtype=np.float32)
     tree=RTreeGuttman(max_entries=capacity)
-    policy=NeuralPolicy(model,device,capacity,hist_bins,construction_queries)
     leaf_groups=neural_partition_groups(r,policy,0,capture,query_cap)
     nodes=_make_leaf_nodes(tree,r,leaf_groups)
     level=1; level_counts=[len(nodes)]
@@ -121,7 +152,9 @@ def build_neural_tree(rects: np.ndarray, construction_queries: np.ndarray, model
         tree.grow_tree(nodes)
     diag={"build_seconds":time.perf_counter()-started,"capacity":capacity,"objects":len(r),
           "leaf_pages":len(leaf_groups),"stored_level_node_counts":level_counts,
-          "neural_decision_count":policy.decisions,"action_counts":{str(k):int(v) for k,v in sorted(policy.action_counts.items())}}
+          "neural_decision_count":policy.decisions if isinstance(policy,NeuralPolicy) else 0,
+          "policy_decision_count":policy.decisions,
+          "action_counts":{str(k):int(v) for k,v in sorted(policy.action_counts.items())}}
     v=validate_tree(tree,len(r),capacity); diag["validation"]=v
     if not v["passed"]: raise RuntimeError(f"neural tree invalid: {v}")
     return tree,diag

@@ -184,6 +184,7 @@ def generate(args) -> dict:
     random.seed(args.seed)
     np.random.seed(args.seed)
     RtreeEnv, get_mbr, MCTS, Node = load_author(args.author_root)
+    construction_started = time.perf_counter()
     env = RtreeEnv(data_array, get_mbr(data_array), args.branch, levels, query_array)
     queue = deque([env])
     action_cursor = 0
@@ -321,6 +322,10 @@ def generate(args) -> dict:
         "cut_count": len(actions),
         "policy_nodes_completed": int(policy_nodes),
         "decision_time_seconds_sum": total_decision_seconds,
+        "fresh_continuous_construction_seconds": (
+            float(time.perf_counter() - construction_started) if not saved else None
+        ),
+        "replayed_action_count": len(saved),
         "run_elapsed_seconds": float(time.monotonic() - run_started),
         "author_root": str(args.author_root),
         "checkpoint_db": str(args.checkpoint_db),
