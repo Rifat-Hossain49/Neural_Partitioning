@@ -1,0 +1,7 @@
+metadata_version: 1
+name: 'WAHARP: Amortizing Workload-Aware R-tree Packing with a Neural Policy'
+description: Code, frozen model, locked query workloads, and evaluation records for the WAHARP paper. The Reproducible Run verifies the released artifact and rebuilds the paper's Arizona results (B = 128, 256, 512) from the frozen checkpoint, checking node accesses, decisions, action counts, and tree structure against the recorded results.
+authors:
+- name: Musa Tur Farazi
+- name: Md. Rifat Hossain
+- name: Chowdhury Mohammad Rakin Haider

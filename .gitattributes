@@ -1,0 +1,5 @@
+code/run text eol=lf
+*.sh text eol=lf
+environment/Dockerfile text eol=lf
+*.npy binary
+*.pt binary

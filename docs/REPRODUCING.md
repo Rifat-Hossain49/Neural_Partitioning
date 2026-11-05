@@ -1,12 +1,15 @@
 # Reproducing the WAHARP paper
 
 There are three levels of reproduction, from minutes on a laptop to the full
-multi-day Kaggle protocol.
+multi-day Kaggle protocol. Paths below are relative to `code/`, and commands
+are run from it. `bash run` (the Code Ocean Reproducible Run entry point)
+performs levels 1 and 2 for the Arizona cells and writes its reports to
+`../results/`.
 
 | Level | What it shows | Needs | Time |
 |---|---|---|---|
 | 1. Verify the artifact | Checkpoint, records, tables, and figure data are consistent | This repository | ~1 minute |
-| 2. Reproduce locked cells | The frozen checkpoint rebuilds the paper's trees and node-access counts exactly | One raw dataset | ~2 minutes per Arizona cell on a CPU |
+| 2. Reproduce locked cells | The frozen checkpoint rebuilds the paper's trees and node-access counts exactly | Arizona is included; Twitter or Crimes must be downloaded | ~2 minutes per Arizona cell on a CPU |
 | 3. Rerun the protocol | Teacher labels, training, selection, baselines, and evaluation from scratch | All datasets, PLATON author code, Kaggle-scale compute | Days |
 
 ## 1. Verify the artifact
@@ -14,26 +17,29 @@ multi-day Kaggle protocol.
 ```bash
 python -m pip install -r requirements.txt
 python scripts/verify_artifacts.py
+python scripts/make_kaggle_bundles.py --check
 python scripts/make_analysis_appendix.py --check
 python scripts/smoke_test.py
 python -m unittest discover -s tests -v
 ```
 
 `verify_artifacts.py` checks the checkpoint hash, protocol records, result-table
-shapes, workload hashes, and correctness gates. `make_analysis_appendix.py --check`
-confirms that [`artifacts/WAHARP_ANALYSIS_APPENDIX.md`](../artifacts/WAHARP_ANALYSIS_APPENDIX.md)
+shapes, workload hashes, and correctness gates. `make_kaggle_bundles.py --check`
+confirms that the code is identical to the code that ran the recorded
+experiments. `make_analysis_appendix.py --check`
+confirms that [`artifacts/WAHARP_ANALYSIS_APPENDIX.md`](../code/artifacts/WAHARP_ANALYSIS_APPENDIX.md)
 and the figure data in `artifacts/paper_figures/` match the committed records.
 
 ## 2. Reproduce locked-evaluation cells
 
 The locked construction workload (2,800 boxes) and the 6,000 final queries for
 every dataset are committed under `artifacts/workloads/<dataset>/`. The same
-arrays are used at all three capacities. With one raw dataset (see
-[`DATASETS.md`](DATASETS.md)):
+arrays are used at all three capacities. The Arizona dataset is included in
+`../data/`; Twitter and Crimes are listed in [`DATASETS.md`](DATASETS.md):
 
 ```bash
 python scripts/reproduce_locked_cell.py --dataset arizona --capacity 512 \
-    --data /path/to/arizona_buildings_n1464257_epsg26912.npy
+    --data ../data/arizona_buildings_n1464257_epsg26912.npy
 ```
 
 The script refuses to run if the normalized dataset hash differs from the

@@ -83,13 +83,18 @@ def main() -> None:
     parser.add_argument("--output", type=Path, default=ROOT / "kaggle_bundles_out")
     parser.add_argument("--bundle", choices=sorted(BUNDLES), action="append",
                         help="Bundle to build (repeatable; default: all)")
+    parser.add_argument("--check", action="store_true",
+                        help="Only compare with the executed code; fail if any file differs")
     args = parser.parse_args()
 
-    for name in args.bundle or BUNDLES:
-        print(f"built {build_bundle(name, args.output)}")
+    if not args.check:
+        for name in args.bundle or BUNDLES:
+            print(f"built {build_bundle(name, args.output)}")
     differences = compare_executed_code()
-    print("\nRepository code vs. the code that executed the recorded experiments:")
+    print("Repository code vs. the code that executed the recorded experiments:")
     print("\n".join(differences) if differences else "  identical")
+    if args.check and differences:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":
