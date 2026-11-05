@@ -7,8 +7,8 @@ original providers.
 
 | Dataset | Expected source | Representation used by WAHARP |
 |---|---|---|
-| Twitter | [UCI Twitter Geospatial Data](https://archive.ics.uci.edu/dataset/1050/twitter+geospatial+data) | Longitude/latitude points converted to small rectangles and normalized to `[0,1]^2` |
-| Crimes | [Chicago Crimes, 2001 to Present](https://www.kaggle.com/datasets/utkarshx27/crimes-2001-to-present) | Longitude/latitude points converted to small rectangles and normalized to `[0,1]^2` |
+| Twitter | [UCI Twitter Geospatial Data](https://doi.org/10.24432/C5RS5J) (CC BY 4.0) | Longitude/latitude points converted to small rectangles and normalized to `[0,1]^2` |
+| Crimes | [Crimes In Chicago (2001 to 2023), Kaggle, version 1 of 29 April 2023](https://www.kaggle.com/datasets/utkarshx27/crimes-2001-to-present) (listed as U.S. Government Works) | Longitude/latitude points converted to small rectangles and normalized to `[0,1]^2` |
 | Arizona | [Geofabrik OpenStreetMap US extracts](https://download.geofabrik.de/north-america/us.html) | 1,464,257 building rectangles, projected and normalized to `[0,1]^2` |
 
 The loaders in `code/realtrain/data.py` discover the source files and record the
