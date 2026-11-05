@@ -1,0 +1,15 @@
+{
+  "capacity": 128,
+  "construction_seconds": 3928.1768681836857,
+  "cut_count": 60139,
+  "cut_sha256": "6d3a8c7d31ca2423c3b1061099d80580a6f79733c290233ef54a7130be1efc7a",
+  "dataset": "crimes",
+  "index_identifier": 1,
+  "mcts_rollouts": 10,
+  "mcts_seconds": 3823.4595232976844,
+  "mcts_simulation_steps": 100,
+  "method": "PLATON-10",
+  "native_build_seconds": 104.71734488600123,
+  "reused_mcts": false,
+  "valid_tree": true
+}

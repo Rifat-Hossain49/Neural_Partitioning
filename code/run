@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Reproducible Run entry point for the WAHARP capsule.
+#
+# 1. Verifies the released artifact: checkpoint hash, protocol records, query
+#    workloads, analysis appendix, frozen-model smoke test, and unit tests, and
+#    confirms the code matches the code that executed the recorded experiments.
+# 2. Rebuilds the paper's three Arizona cells (B = 128, 256, 512) from the frozen
+#    checkpoint and checks node accesses, decisions, action counts, and tree
+#    structure against the recorded results.
+#
+# Reports are written to ../results (/results in Code Ocean).
+set -euo pipefail
+
+cd "$(dirname "$0")"
+RESULTS="$(cd .. && pwd)/results"
+mkdir -p "$RESULTS"
+ARIZONA="../data/arizona_buildings_n1464257_epsg26912.npy"
+SUMMARY="$RESULTS/SUMMARY.md"
+
+step() {
+  local name="$1"; shift
+  echo "==> $name"
+  "$@" 2>&1 | tee "$RESULTS/$name.txt"
+  echo "- $name: passed" >> "$SUMMARY"
+}
+
+{
+  echo "# WAHARP reproducible run"
+  echo
+  echo "Python $(python -c 'import platform; print(platform.python_version())'),"\
+       "PyTorch $(python -c 'import torch; print(torch.__version__)'),"\
+       "NumPy $(python -c 'import numpy; print(numpy.__version__)')"
+  echo
+} > "$SUMMARY"
+
+step verify_artifacts python -u scripts/verify_artifacts.py
+step analysis_appendix_check python -u scripts/make_analysis_appendix.py --check
+step executed_code_check python -u scripts/make_kaggle_bundles.py --check
+step smoke_test python -u scripts/smoke_test.py
+step unit_tests python -u -m unittest discover -s tests -v
+
+for capacity in 128 256 512; do
+  step "reproduce_arizona_B${capacity}" python -u scripts/reproduce_locked_cell.py \
+    --dataset arizona --capacity "$capacity" --data "$ARIZONA" \
+    --output "$RESULTS/reproduce_arizona_B${capacity}.json"
+done
+
+cp artifacts/WAHARP_ANALYSIS_APPENDIX.md "$RESULTS/"
+echo >> "$SUMMARY"
+echo "All checks passed. The Arizona cells match the recorded paper results." >> "$SUMMARY"
+cat "$SUMMARY"

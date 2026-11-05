@@ -13,8 +13,11 @@ Thumbs.db
 *.tmp
 *.zip
 *.tar.gz
-data/
+/data/*
+!/data/README.md
+!/data/arizona_buildings_n1464257_epsg26912.npy
+/results/
 outputs/
 checkpoints/
 custom_benchmark_output/
-!artifacts/model/selected.pt
+kaggle_bundles_out/

@@ -1,0 +1,37 @@
+dataset,capacity,platon_rollouts,query_family,queries_checked,mismatches,passed,correctness_check
+arizona,128,1,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+arizona,128,1,point,300,0,True,"exact result count, ID sum, and ID XOR"
+arizona,128,1,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties
+arizona,128,5,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+arizona,128,5,point,300,0,True,"exact result count, ID sum, and ID XOR"
+arizona,128,5,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties
+arizona,128,10,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+arizona,128,10,point,300,0,True,"exact result count, ID sum, and ID XOR"
+arizona,128,10,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties
+arizona,128,25,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+arizona,128,25,point,300,0,True,"exact result count, ID sum, and ID XOR"
+arizona,128,25,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties
+crimes,128,1,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+crimes,128,1,point,300,0,True,"exact result count, ID sum, and ID XOR"
+crimes,128,1,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties
+crimes,128,5,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+crimes,128,5,point,300,0,True,"exact result count, ID sum, and ID XOR"
+crimes,128,5,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties
+crimes,128,10,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+crimes,128,10,point,300,0,True,"exact result count, ID sum, and ID XOR"
+crimes,128,10,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties
+crimes,128,25,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+crimes,128,25,point,300,0,True,"exact result count, ID sum, and ID XOR"
+crimes,128,25,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties
+twitter,128,1,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+twitter,128,1,point,300,0,True,"exact result count, ID sum, and ID XOR"
+twitter,128,1,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties
+twitter,128,5,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+twitter,128,5,point,300,0,True,"exact result count, ID sum, and ID XOR"
+twitter,128,5,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties
+twitter,128,10,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+twitter,128,10,point,300,0,True,"exact result count, ID sum, and ID XOR"
+twitter,128,10,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties
+twitter,128,25,range,4200,0,True,"exact result count, ID sum, and ID XOR"
+twitter,128,25,point,300,0,True,"exact result count, ID sum, and ID XOR"
+twitter,128,25,knn,1500,0,True,equivalent kth distance; native search may expand boundary ties

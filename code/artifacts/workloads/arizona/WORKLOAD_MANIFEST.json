@@ -1,0 +1,240 @@
+{
+  "construction": {
+    "count": 2800,
+    "knn_k_values": [
+      1,
+      5,
+      25,
+      125,
+      625
+    ],
+    "knn_surrogate_count": 700,
+    "point_count": 140,
+    "range_count": 1960,
+    "sha256": "57c6bf45d43468c5648a3091ccc7ea41784f926f4bf1cb69d0b4deeba1682fb3"
+  },
+  "dataset": "arizona",
+  "final_knn": {
+    "count_per_k": 300,
+    "k_values": [
+      1,
+      5,
+      25,
+      125,
+      625
+    ],
+    "sha256": "aa7dded401093dae42ff4c914e46499faa62ca78744efc1bdd9296141312818a"
+  },
+  "final_points": {
+    "count": 300,
+    "sha256": "39e23142d9d695b6fadae32fc6657cea9b6bf95abf852c6e2d6a41a0abdc8711"
+  },
+  "final_range_specs": [
+    {
+      "count": 300,
+      "name": "square_side_0.001",
+      "query_type": "range",
+      "side": 0.001
+    },
+    {
+      "count": 300,
+      "name": "square_side_0.005",
+      "query_type": "range",
+      "side": 0.005
+    },
+    {
+      "count": 300,
+      "name": "square_side_0.01",
+      "query_type": "range",
+      "side": 0.01
+    },
+    {
+      "count": 300,
+      "name": "square_side_0.05",
+      "query_type": "range",
+      "side": 0.05
+    },
+    {
+      "count": 300,
+      "name": "square_side_0.1",
+      "query_type": "range",
+      "side": 0.1
+    },
+    {
+      "area": 0.010000000000000002,
+      "aspect": 0.0625,
+      "count": 300,
+      "name": "aspect_0.0625",
+      "query_type": "range"
+    },
+    {
+      "area": 0.01,
+      "aspect": 0.125,
+      "count": 300,
+      "name": "aspect_0.125",
+      "query_type": "range"
+    },
+    {
+      "area": 0.010000000000000002,
+      "aspect": 0.25,
+      "count": 300,
+      "name": "aspect_0.25",
+      "query_type": "range"
+    },
+    {
+      "area": 0.01,
+      "aspect": 0.5,
+      "count": 300,
+      "name": "aspect_0.5",
+      "query_type": "range"
+    },
+    {
+      "area": 0.010000000000000002,
+      "aspect": 1.0,
+      "count": 300,
+      "name": "aspect_1",
+      "query_type": "range"
+    },
+    {
+      "area": 0.01,
+      "aspect": 2.0,
+      "count": 300,
+      "name": "aspect_2",
+      "query_type": "range"
+    },
+    {
+      "area": 0.010000000000000002,
+      "aspect": 4.0,
+      "count": 300,
+      "name": "aspect_4",
+      "query_type": "range"
+    },
+    {
+      "area": 0.01,
+      "aspect": 8.0,
+      "count": 300,
+      "name": "aspect_8",
+      "query_type": "range"
+    },
+    {
+      "area": 0.010000000000000002,
+      "aspect": 16.0,
+      "count": 300,
+      "name": "aspect_16",
+      "query_type": "range"
+    }
+  ],
+  "leakage_rule": "construction boxes only may influence training/tree construction; validation selects checkpoint; final is evaluation only",
+  "namespace": "waharp_final_fullscale_b128_member2_93d3c2545e44b9e21269a1b4",
+  "seed": 5472563944034462531,
+  "validation_knn": {
+    "count_per_k": 100,
+    "k_values": [
+      1,
+      5,
+      25,
+      125,
+      625
+    ],
+    "sha256": "b7040292a79034c1f771b2a6ea8a408e1f947233c51c235e3503b94439c575c0"
+  },
+  "validation_points": {
+    "count": 100,
+    "sha256": "2b0595c8f5a322f6bd5dc88d2858efb8ef0b502b2204e85f6c01837954a4b5f0"
+  },
+  "validation_range_specs": [
+    {
+      "count": 100,
+      "name": "square_side_0.001",
+      "query_type": "range",
+      "side": 0.001
+    },
+    {
+      "count": 100,
+      "name": "square_side_0.005",
+      "query_type": "range",
+      "side": 0.005
+    },
+    {
+      "count": 100,
+      "name": "square_side_0.01",
+      "query_type": "range",
+      "side": 0.01
+    },
+    {
+      "count": 100,
+      "name": "square_side_0.05",
+      "query_type": "range",
+      "side": 0.05
+    },
+    {
+      "count": 100,
+      "name": "square_side_0.1",
+      "query_type": "range",
+      "side": 0.1
+    },
+    {
+      "area": 0.010000000000000002,
+      "aspect": 0.0625,
+      "count": 100,
+      "name": "aspect_0.0625",
+      "query_type": "range"
+    },
+    {
+      "area": 0.01,
+      "aspect": 0.125,
+      "count": 100,
+      "name": "aspect_0.125",
+      "query_type": "range"
+    },
+    {
+      "area": 0.010000000000000002,
+      "aspect": 0.25,
+      "count": 100,
+      "name": "aspect_0.25",
+      "query_type": "range"
+    },
+    {
+      "area": 0.01,
+      "aspect": 0.5,
+      "count": 100,
+      "name": "aspect_0.5",
+      "query_type": "range"
+    },
+    {
+      "area": 0.010000000000000002,
+      "aspect": 1.0,
+      "count": 100,
+      "name": "aspect_1",
+      "query_type": "range"
+    },
+    {
+      "area": 0.01,
+      "aspect": 2.0,
+      "count": 100,
+      "name": "aspect_2",
+      "query_type": "range"
+    },
+    {
+      "area": 0.010000000000000002,
+      "aspect": 4.0,
+      "count": 100,
+      "name": "aspect_4",
+      "query_type": "range"
+    },
+    {
+      "area": 0.01,
+      "aspect": 8.0,
+      "count": 100,
+      "name": "aspect_8",
+      "query_type": "range"
+    },
+    {
+      "area": 0.010000000000000002,
+      "aspect": 16.0,
+      "count": 100,
+      "name": "aspect_16",
+      "query_type": "range"
+    }
+  ]
+}

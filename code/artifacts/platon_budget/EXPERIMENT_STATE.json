@@ -1,0 +1,52 @@
+{
+  "capacity": 128,
+  "completed_platon_cells": [
+    "arizona/r1",
+    "arizona/r5",
+    "arizona/r10",
+    "arizona/r25",
+    "crimes/r1",
+    "crimes/r5",
+    "crimes/r10",
+    "crimes/r25",
+    "twitter/r1",
+    "twitter/r5",
+    "twitter/r10",
+    "twitter/r25"
+  ],
+  "completed_waharp_datasets": [
+    "arizona",
+    "crimes",
+    "twitter"
+  ],
+  "correctness_mismatches": 0,
+  "datasets": [
+    "arizona",
+    "crimes",
+    "twitter"
+  ],
+  "elapsed_seconds_this_session": 24503.209111306,
+  "finished_utc": "2026-09-07T14:12:45.399139+00:00",
+  "fresh_evaluation_namespace": "waharp_platon_budget_b128_fresh_eval_v1_20260907",
+  "gpu_available": true,
+  "gpu_name": "Tesla T4",
+  "paper_construction_namespace": "waharp_final_fullscale_b128_member2_93d3c2545e44b9e21269a1b4",
+  "protocol_id": "waharp_platon_budget_b128_v1_20260907",
+  "queries_per_cell": 6000,
+  "query_mix": {
+    "knn": 1500,
+    "point": 300,
+    "range": 4200
+  },
+  "result_rows": 12,
+  "rollouts": [
+    1,
+    5,
+    10,
+    25
+  ],
+  "simulation_steps": 100,
+  "status": "COMPLETE",
+  "updated_utc": "2026-09-07T14:12:45.399550+00:00",
+  "waharp_retrained": false
+}
